@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>元素洪流 - Elemental Tide v16</title>
+    <title>元素洪流 - Elemental Tide v20</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -209,7 +209,7 @@
                 <div class="flex justify-around gap-1">
                     <!-- 数量 -->
                     <button id="upgrade-quantity" class="btn-upgrade flex-1 p-2 bg-red-600 hover:bg-red-700 rounded-lg shadow-md text-xs text-center">
-                        <div>数量 I (<span id="cost-quantity">50</span>)</div>
+                        <div>数量 I (<span id="cost-quantity">75</span>)</div>
                         <div class="font-bold">LV: <span id="level-quantity">1</span></div>
                     </button>
                     <span class="tooltip-trigger" 
@@ -242,36 +242,65 @@
             <div class="bg-gray-800 p-6 rounded-lg shadow-2xl w-11/12 max-w-sm">
                 <h1 id="modal-title" class="text-2xl font-bold mb-4 text-center text-yellow-300">元素洪流</h1>
                 
-                <!-- 职业选择 (v16 GAI: 更新了描述) -->
-                <div id="class-selection" class="space-y-3">
-                    <h3 class="text-center font-bold text-lg">选择你的成长路线:</h3>
-                    <p class="text-center text-xs opacity-80">在路径达到 **LV.3 或 LV.4** 时，可解锁强大的**路径专精**！</p>
+                <!-- v20 GAI: 职业选择 (2x3 网格) -->
+                <div id="class-selection">
+                    <h3 class="text-center font-bold text-lg mb-2">选择你的成长路线:</h3>
+                    <p class="text-center text-xs opacity-80 mb-3">在路径达到 **LV.3 或 LV.4** 时，可解锁强大的**路径专精**！</p>
                     
-                    <button id="start-commander" class="btn-class w-full p-3 bg-gray-600 hover:bg-gray-700 rounded-lg text-left">
-                        <div class="font-bold text-lg">统帅 (均衡)</div>
-                        <div class="text-sm opacity-90">
-                            技能: <span class="text-yellow-300">[战术护盾]</span> - 为基地提供护盾(10秒)。
-                            <br>战术: <span class="text-yellow-300">[守护巨兽]</span> - 死亡时分裂成3个老兵。
-                        </div>
-                    </button>
-                    
-                    <button id="start-berserker" class="btn-class w-full p-3 bg-red-700 hover:bg-red-800 rounded-lg text-left">
-                        <div class="font-bold text-lg">狂战士 (伤害)</div>
-                        <div class="text-sm opacity-90">
-                            (伤害升级 <span class="text-green-300">+30%</span>, 数量升级 <span class="text-red-300">-30%</span>)
-                            <br>技能: <span class="text-yellow-300">[过载]</span> - 临时获得双倍伤害。
-                            <br>战术: <span class="text-yellow-300">[自爆巨兽]</span> - 死亡时造成范围伤害。
-                        </div>
-                    </button>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="start-commander" class="btn-class w-full p-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-left">
+                            <div class="font-bold text-md">统帅 (均衡)</div>
+                            <div class="text-xs opacity-90">
+                                技能: [战术护盾] (<span class="text-cyan-300">减速波</span>)
+                                <br>战术: [守护巨兽] (<span class="text-green-300">分散</span>)
+                            </div>
+                        </button>
+                        
+                        <button id="start-berserker" class="btn-class w-full p-2 bg-red-700 hover:bg-red-800 rounded-lg text-left">
+                            <div class="font-bold text-md">狂战士 (伤害)</div>
+                            <div class="text-xs opacity-90">
+                                (伤害<span class="text-green-300">+40%</span>, 数量<span class="text-red-300">-30%</span>)
+                                <br>技能: [过载] (<span class="text-green-300">反噬降低</span>)
+                                <br>战术: [自爆巨兽] (<span class="text-green-300">范围+</span>)
+                            </div>
+                        </button>
 
-                    <button id="start-swarm" class="btn-class w-full p-3 bg-blue-700 hover:bg-blue-800 rounded-lg text-left">
-                        <div class="font-bold text-lg">虫群 (数量)</div>
-                        <div class="text-sm opacity-90">
-                            (数量升级 <span class="text-green-300">+30%</span>, 伤害升级 <span class="text-red-300">-30%</span>)
-                            <br>技能: <span class="text-yellow-300">[紧急增援]</span> - 立即产生一波单位。
-                            <br>战术: <span class="text-yellow-300">[孵化领主]</span> - 自动孵化免费的幼虫。
-                        </div>
-                    </button>
+                        <button id="start-swarm" class="btn-class w-full p-2 bg-blue-700 hover:bg-blue-800 rounded-lg text-left">
+                            <div class="font-bold text-md">虫群 (数量)</div>
+                            <div class="text-xs opacity-90">
+                                (数量<span class="text-green-300">+30%</span>, 伤害<span class="text-red-300">-30%</span>)
+                                <br>技能: [紧急增援] (<span class="text-green-300">冲锋</span>)
+                                <br>战术: [孵化领主] (<span class="text-green-300">继承</span>)
+                            </div>
+                        </button>
+                        
+                        <button id="start-elementalist" class="btn-class w-full p-2 bg-orange-700 hover:bg-orange-800 rounded-lg text-left">
+                            <div class="font-bold text-md">元素使 (范围/持续)</div>
+                            <div class="text-xs opacity-90">
+                                (附加<span class="text-orange-300">[燃烧]</span>, 成本<span class="text-red-300">+10%</span>)
+                                <br>技能: [烈焰风暴] (<span class="text-red-400">敌我皆伤</span>)
+                                <br>战术: [熔火核心] (<span class="text-orange-300">范围燃烧</span>)
+                            </div>
+                        </button>
+                        
+                        <button id="start-illusionist" class="btn-class w-full p-2 bg-indigo-700 hover:bg-indigo-800 rounded-lg text-left">
+                            <div class="font-bold text-md">幻术师 (诡计/闪避)</div>
+                            <div class="text-xs opacity-90">
+                                (<span class="text-green-300">15%闪避</span>, 战术成本<span class="text-red-300">+10%</span>)
+                                <br>技能: [诡计传送] (中场)
+                                <br>战术: [幻影刺客] (<span class="text-yellow-300">首攻</span>)
+                            </div>
+                        </button>
+                        
+                        <button id="start-aegis" class="btn-class w-full p-2 bg-yellow-700 hover:bg-yellow-800 rounded-lg text-left">
+                            <div class="font-bold text-md">圣盾 (防御/治疗)</div>
+                            <div class="text-xs opacity-90">
+                                (基地<span class="text-green-300">减伤10%</span>, 数量成本<span class="text-red-300">+10%</span>)
+                                <br>技能: [神圣庇护] (<span class="text-red-400">停产无敌</span>)
+                                <br>战术: [圣殿卫士] (<span class="text-green-300">死亡治疗</span>)
+                            </div>
+                        </button>
+                    </div>
                 </div>
                  
                 <!-- 游戏结果 -->
@@ -428,6 +457,18 @@
             const aiClassNames = { 'Commander': '统帅', 'Berserker': '狂战士', 'Swarm': '虫群' };
             const playerClassNames = { 'Commander': '统帅', 'Berserker': '狂战士', 'Swarm': '虫群' };
             
+            // v20 GAI: 补充新职业名称
+            Object.assign(aiClassNames, {
+                'Elementalist': '元素使',
+                'Illusionist': '幻术师',
+                'Aegis': '圣盾'
+            });
+            Object.assign(playerClassNames, {
+                'Elementalist': '元素使',
+                'Illusionist': '幻术师',
+                'Aegis': '圣盾'
+            });
+
             // v16 GAI: 专精数据
             const expertiseData = {
                 quantity: {
@@ -453,7 +494,7 @@
                 }
             };
 
-            // --- 粒子类 (V15 GAI: 专精效果) ---
+            // --- 粒子类 (V20 GAI: 新机制) ---
             class Particle {
                 constructor() { this.active = false; this.reset(); }
                 reset() {
@@ -467,12 +508,27 @@
                     this.isOverloaded = false; // For Berserker Skill
                     this.isLarva = false; // For Swarm tactic
                     this.isVeteran = false; // v13 GAI: For Commander tactic
+                    
+                    // v18 GAI: 新机制
+                    this.burnTimer = 0;
+                    this.burnDamage = 0;
+                    this.hasHit = false; // For Illusionist Tactic
+                    this.boostTimer = 0; // For Illusionist Skill / Swarm Skill
+                    
+                    // v20 GAI: 
+                    this.maxPower = 1; // For Aegis healing
                 }
 
-                // v15 GAI: 增加了 stats 参数
+                // v20 GAI: 增加了 stats 参数
                 init(x, y, isPlayer, power, isSpecial, tacticType, isLarva, isVeteran, stats) {
                     this.active = true; this.x = x; this.y = y; this.isPlayer = isPlayer;
-                    this.power = power; this.isSpecial = isSpecial;
+                    
+                    // v20 GAI: 圣盾被动
+                    let initialPower = power * stats.unitHealthMod;
+                    this.power = initialPower;
+                    this.maxPower = initialPower; // 用于治疗
+                    
+                    this.isSpecial = isSpecial;
                     this.tacticType = tacticType;
                     this.isLarva = isLarva;
                     this.isVeteran = isVeteran; 
@@ -480,7 +536,11 @@
                     this.isEffect = false; this.life = 1;
                     
                     let baseSpeed = H * 0.0008 + Math.random() * 0.5;
-                    if (isLarva || isVeteran) baseSpeed *= 1.1; 
+                    // v18 GAI: (圣盾无移速惩罚)
+                    
+                    if (isLarva) baseSpeed *= 1.1; 
+                    // v18 GAI: 统帅老兵速度强化
+                    if (isVeteran) baseSpeed *= 1.2; 
                     
                     // v15 GAI: 应用 「先锋」 专精
                     if (!isSpecial && !isLarva && !isVeteran) {
@@ -510,6 +570,21 @@
                         if (tacticType === 'Swarm') {
                             this.spawnTimer = 1.0 + Math.random() * 1.0; // 1-2秒后开始生产
                         }
+                        // v18 GAI: 幻术师战术单位
+                        if (tacticType === 'Illusionist') {
+                            this.hasHit = true; // 首次攻击
+                            this.vy *= 1.5; // 移速快
+                            this.radius *= 0.8; // 更小
+                        }
+                        // v18 GAI: 元素使战术单位
+                        if (tacticType === 'Elementalist') {
+                            this.hue = 30 + Math.random() * 20; // 橙色
+                        }
+                        // v20 GAI: 圣盾战术单位
+                        if (tacticType === 'Aegis') {
+                            this.hue = 50 + Math.random() * 20; // 黄色
+                            this.vy *= 0.8; // 移速慢
+                        }
                     } else {
                         // --- 普通单位 ---
                         const powerNormal = Math.min(this.power / 15.0, 1.0); 
@@ -518,7 +593,7 @@
                     }
                 }
                 
-                // ... (initSpark and draw methods remain unchanged from v14) ...
+                // ... (initSpark) ...
                 initSpark(x, y, hue, saturation, lightness, isExplosion = false) {
                     this.active = true; this.x = x; this.y = y;
                     const angle = Math.random() * Math.PI * 2;
@@ -588,6 +663,18 @@
                             ctx.shadowBlur = 0;
                         }
 
+                        // v18 GAI: 燃烧特效
+                        if (this.burnTimer > 0) {
+                            ctx.shadowBlur = 10;
+                            ctx.shadowColor = `rgba(255, 100, 0, 0.8)`;
+                            // 绘制一个闪烁的火焰核心
+                            ctx.fillStyle = `hsla(30, 100%, 50%, ${0.5 + Math.sin(performance.now() / 100) * 0.5})`;
+                            ctx.beginPath();
+                            ctx.arc(this.x, this.y, this.radius * 0.5, 0, Math.PI * 2);
+                            ctx.fill();
+                            ctx.shadowBlur = 0;
+                        }
+
                         // 战术单位的额外光晕
                         if (this.isSpecial) {
                             ctx.fillStyle = `hsla(${this.hue}, 100%, 70%, 0.15)`;
@@ -600,6 +687,22 @@
                 
                 update(delta) {
                     if (!this.active) return;
+                    
+                    // v18 GAI: 加速/减速计时器
+                    if (this.boostTimer > 0) {
+                        this.boostTimer -= delta;
+                        if (this.boostTimer <= 0) {
+                            // v18 GAI: 区分加速和减速
+                            if (this.vy > 0) { // AI
+                                this.vy = this.isPlayer ? -Math.abs(this.vy) * 2.0 : Math.abs(this.vy) / 1.5; // Swarm / Illusionist
+                                if (this.vy < 0) this.vy = Math.abs(this.vy) * 1.3; // Commander Slow
+                            } else { // Player
+                                this.vy = this.isPlayer ? -Math.abs(this.vy) / 1.5 : Math.abs(this.vy) * 2.0; // Swarm / Illusionist
+                                if (this.vy > 0) this.vy = -Math.abs(this.vy) * 1.3; // Commander Slow
+                            }
+                        }
+                    }
+                    
                     this.x += this.vx; this.y += this.vy;
 
                     if (this.isEffect) {
@@ -610,6 +713,18 @@
                         this.vy *= 0.95;
                         if (this.life <= 0 || this.radius < 0.2) this.active = false;
                     } else {
+                        // v18 GAI: 燃烧状态更新
+                        if (this.burnTimer > 0) {
+                            this.burnTimer -= delta;
+                            // 燃烧造成伤害 (v18: 修正为每秒伤害)
+                            this.power -= this.burnDamage * delta; 
+                            if (this.power <= 0) {
+                                this.active = false;
+                                spawnSpark(this.x, this.y, 30, 100, 50, 3); // 死亡火花
+                                return; // 燃烧致死
+                            }
+                        }
+
                         // 战斗粒子逻辑
                         if (this.x < this.radius || this.x > W - this.radius) {
                             this.vx *= -0.8; this.x = Math.max(this.radius, Math.min(W - this.radius, this.x));
@@ -619,7 +734,7 @@
                         if (this.isSpecial && this.tacticType === 'Swarm') {
                             this.spawnTimer -= delta;
                             if (this.spawnTimer <= 0) {
-                                spawnLarva(this.x, this.y, this.isPlayer);
+                                spawnLarva(this.x, this.y, this.isPlayer, this.power); // v18 GAI: 传入宿主power
                                 this.spawnTimer = 2.0; // 每2秒
                             }
                         }
@@ -657,7 +772,7 @@
                             triggerBaseHitEffect(false, this.power, this.x);
                             // 狂战士 [过载] 反噬
                             if (this.isOverloaded) {
-                                triggerBaseHitEffect(true, this.power * 0.1, this.x, true); // 10% 反噬, true = silent
+                                triggerBaseHitEffect(true, this.power * 0.08, this.x, true); // v18 GAI: 10% -> 8%
                             }
                             this.active = false;
                             if (aiStats.health <= 0) gameOver(true);
@@ -666,7 +781,7 @@
                             triggerBaseHitEffect(true, this.power, this.x);
                             // AI 狂战士 [过载] 反噬
                             if (this.isOverloaded) {
-                                triggerBaseHitEffect(false, this.power * 0.1, this.x, true); // 10% 反噬, true = silent
+                                triggerBaseHitEffect(false, this.power * 0.08, this.x, true); // v18 GAI: 10% -> 8%
                             }
                             this.active = false;
                             if (playerStats.health <= 0) gameOver(false);
@@ -698,7 +813,7 @@
                 playerBaseEdge = H - playerUIBar.offsetHeight;
             }
             
-            // v16 GAI: resetStats
+            // v20 GAI: resetStats
             function resetStats(isPlayer) {
                 return {
                     energy: 100, health: BASE_HEALTH, 
@@ -706,11 +821,19 @@
                     levelSpeed: 1, levelPower: 1, levelSpecial: 0,
                     
                     // v16 GAI: 经济重构
-                    costSpeed: 50, 
+                    costSpeed: 75, // v18 GAI: 50 -> 75
                     costPower: 100, 
                     costSpecial: 150, // Plan 1
                     
                     class: 'Commander',
+                    
+                    // v18 GAI: 新增被动
+                    burnOnHit: 0, // For Elementalist
+                    
+                    // v20 GAI: 圣盾被动
+                    damageReduction: 0,
+                    unitHealthMod: 1.0,
+                    isImmune: false,
                     
                     // v16 GAI: 专精乘数
                     powerUpgradeMod: 1.0, 
@@ -734,7 +857,8 @@
                     maxShield: 200,
                     shieldTimer: 0, 
                     
-                    skillActiveTimer: 0 // For Overload
+                    skillActiveTimer: 0, // For Overload / Aegis
+                    skillActiveTimer2: 0 // v18 GAI: For Elementalist Storm
                 };
             }
 
@@ -746,15 +870,31 @@
                 playerStats = resetStats(true);
                 aiStats = resetStats(false);
                 
-                const aiClasses = ['Commander', 'Berserker', 'Swarm'];
+                // v20 GAI: AI 可以选择所有职业
+                const aiClasses = ['Commander', 'Berserker', 'Swarm', 'Elementalist', 'Illusionist', 'Aegis'];
                 const aiClass = aiClasses[Math.floor(Math.random() * aiClasses.length)];
                 aiStats.class = aiClass;
                 if (aiClass === 'Berserker') {
-                    aiStats.powerUpgradeMod = 1.3;
+                    aiStats.powerUpgradeMod = 1.4; // v18 GAI: 1.3 -> 1.4
                     aiStats.speedUpgradeMod = 0.7;
                 } else if (aiClass === 'Swarm') {
                     aiStats.powerUpgradeMod = 0.7;
                     aiStats.speedUpgradeMod = 1.3;
+                }
+                // v18 GAI: AI 新职业被动
+                if (aiClass === 'Elementalist') {
+                    aiStats.costSpeedMultiplier *= 1.1;
+                    aiStats.costPowerMultiplier *= 1.1;
+                    aiStats.costTacticMultiplier *= 1.1;
+                }
+                if (aiClass === 'Illusionist') {
+                    aiStats.costTacticMultiplier *= 1.1;
+                }
+                // v20 GAI: 圣盾被动
+                if (aiClass === 'Aegis') {
+                    aiStats.damageReduction = 0.1;
+                    aiStats.unitHealthMod = 1.1;
+                    aiStats.costSpeedMultiplier *= 1.1;
                 }
                 
                 aiDecisionTimer = 0;
@@ -777,13 +917,34 @@
             function startGame(playerClass) {
                 playerStats.class = playerClass;
                 if (playerClass === 'Berserker') {
-                    playerStats.powerUpgradeMod = 1.3;
+                    playerStats.powerUpgradeMod = 1.4; // v18 GAI: 1.3 -> 1.4
                     playerStats.speedUpgradeMod = 0.7;
                 } else if (playerClass === 'Swarm') {
                     playerStats.powerUpgradeMod = 0.7;
                     playerStats.speedUpgradeMod = 1.3;
                 }
                 
+                // v18 GAI: 新职业被动
+                if (playerClass === 'Elementalist') {
+                    // 升级成本 +10%
+                    playerStats.costSpeedMultiplier *= 1.1;
+                    playerStats.costPowerMultiplier *= 1.1;
+                    playerStats.costTacticMultiplier *= 1.1;
+                }
+                if (playerClass === 'Illusionist') {
+                    // 战术成本 +10%
+                    playerStats.costTacticMultiplier *= 1.1;
+                }
+                // v20 GAI: 圣盾被动
+                if (playerClass === 'Aegis') {
+                    // 基地减伤 10%
+                    playerStats.damageReduction = 0.1;
+                    // 单位生命 +10%
+                    playerStats.unitHealthMod = 1.1;
+                    // 数量成本 +10%
+                    playerStats.costSpeedMultiplier *= 1.1;
+                }
+
                 aetherCostTextEl.textContent = playerStats.aetherCost;
                 
                 gameRunning = true;
@@ -809,9 +970,16 @@
                 modalTitle.className = playerWon ? "text-2xl font-bold mb-3 text-center text-green-400" : "text-2xl font-bold mb-3 text-center text-red-400";
             }
             
-            // v14 GAI: 更新玩家UI (修复Aether显示)
+            // v20 GAI: 更新玩家UI
             function updateUI() {
-                energyEl.textContent = Math.floor(playerStats.energy);
+                // v20 GAI: 圣盾技能
+                if (playerStats.isImmune) {
+                    energyEl.textContent = "0 (庇护中)";
+                    energyEl.classList.add("text-yellow-400");
+                } else {
+                    energyEl.textContent = Math.floor(playerStats.energy);
+                    energyEl.classList.remove("text-yellow-400");
+                }
                 
                 const playerHealthPercent = Math.max(0, playerStats.health / BASE_HEALTH) * 100;
                 playerHealthBar.style.width = `${playerHealthPercent}%`;
@@ -847,10 +1015,18 @@
                 aetherBar.style.width = `${aetherPercent}%`;
                 aetherText.textContent = `${Math.floor(playerStats.aether)}`; // 只显示当前拥有的
                 
-                skillButton.disabled = playerStats.aether < playerStats.aetherCost || playerStats.skillActiveTimer > 0;
+                // v20 GAI: 扩展技能CD
+                const skillOnCooldown = playerStats.skillActiveTimer > 0 || playerStats.skillActiveTimer2 > 0;
+                skillButton.disabled = playerStats.aether < playerStats.aetherCost || skillOnCooldown;
                 
-                if (playerStats.skillActiveTimer > 0) {
+                if (playerStats.class === 'Berserker' && playerStats.skillActiveTimer > 0) {
                     skillButton.firstElementChild.textContent = `过载中...`;
+                    skillButton.lastElementChild.innerHTML = `(${playerStats.skillActiveTimer.toFixed(1)}s)`;
+                } else if (playerStats.class === 'Elementalist' && playerStats.skillActiveTimer2 > 0) {
+                    skillButton.firstElementChild.textContent = `风暴中...`;
+                    skillButton.lastElementChild.innerHTML = `(${playerStats.skillActiveTimer2.toFixed(1)}s)`;
+                } else if (playerStats.class === 'Aegis' && playerStats.skillActiveTimer > 0) {
+                    skillButton.firstElementChild.textContent = `庇护中...`;
                     skillButton.lastElementChild.innerHTML = `(${playerStats.skillActiveTimer.toFixed(1)}s)`;
                 } else {
                     skillButton.firstElementChild.textContent = "释放技能";
@@ -886,7 +1062,7 @@
                 document.getElementById('upgrade-tactic').disabled = playerStats.energy < playerStats.costSpecial;
             }
             
-            // v16 GAI: 玩家升级 (调整触发等级)
+            // v18 GAI: 玩家升级
             function playerUpgrade(type) {
                 if (!gameRunning) return;
                 
@@ -913,6 +1089,11 @@
                             if (playerStats.expertiseDamage === 'Focus') damageGain *= 1.2;
                             playerStats.power += damageGain; 
                             
+                            // v18 GAI: 元素使被动
+                            if (playerStats.class === 'Elementalist') {
+                                playerStats.burnOnHit += 0.2; // 每次伤害升级 +0.2 燃烧秒伤
+                            }
+
                             // v15 GAI: 「巨兽培育」 效果
                             if (playerStats.expertiseDamage === 'Nurture') {
                                 playerStats.specialChance = Math.min(0.5, playerStats.specialChance + 0.005);
@@ -971,7 +1152,7 @@
                 expertiseModal.style.display = 'flex';
             }
             
-            // v15 GAI: 玩家选择专精
+            // v18 GAI: 玩家选择专精
             function selectExpertise(choice) {
                 const path = playerStats.pendingExpertise;
                 
@@ -994,7 +1175,9 @@
                 else if (path === 'tactic') {
                     playerStats.expertiseTactic = choice;
                     if (choice === 'Legend') {
-                        playerStats.tacticPowerMod = 1.25;
+                        // v18 GAI: 统帅被动 (专精也受影响)
+                        let legendMod = (playerStats.class === 'Commander') ? 1.45 : 1.25;
+                        playerStats.tacticPowerMod = legendMod;
                     }
                     // 'Synergy' 的效果在 playerUpgrade('tactic') 中应用
                 }
@@ -1008,7 +1191,7 @@
             }
 
 
-            // v16 GAI: AI 升级 (修复了硬编码, 调整了触发等级)
+            // v18 GAI: AI 升级
             function aiUpgrade(type) {
                  let checkExpertise = false;
                  
@@ -1032,6 +1215,11 @@
                             aiStats.specialChance = Math.min(0.5, aiStats.specialChance + 0.005);
                         }
                         
+                        // v18 GAI: 元素使被动
+                        if (aiStats.class === 'Elementalist') {
+                            aiStats.burnOnHit += 0.2;
+                        }
+
                         aiStats.levelPower++; 
                         aiStats.costPower = Math.floor(aiStats.costPower * aiStats.costPowerMultiplier); // v16 Bugfix
                         if (aiStats.levelPower === EXPERTISE_TRIGGER_DMG && !aiStats.expertiseDamage) { // v16 GAI
@@ -1059,7 +1247,7 @@
                 }
             }
             
-            // v15 GAI: AI 选择专精
+            // v18 GAI: AI 选择专精
             function aiSelectExpertise(path) {
                 let choice;
                 const choices = Object.keys(expertiseData[path].choices);
@@ -1094,16 +1282,19 @@
                 else if (path === 'tactic') {
                     aiStats.expertiseTactic = choice;
                     if (choice === 'Legend') {
-                        aiStats.tacticPowerMod = 1.25;
+                        // v18 GAI: 统帅被动
+                        let legendMod = (aiStats.class === 'Commander') ? 1.45 : 1.25;
+                        aiStats.tacticPowerMod = legendMod;
                     }
                 }
                 
                 aiStats.pendingExpertise = null;
             }
             
-            // v13 GAI: 玩家释放技能 (动态消耗)
+            // v20 GAI: 玩家释放技能
             function playerActivateSkill() {
-                if (!gameRunning || playerStats.aether < playerStats.aetherCost || playerStats.skillActiveTimer > 0) return;
+                const skillOnCooldown = playerStats.skillActiveTimer > 0 || playerStats.skillActiveTimer2 > 0;
+                if (!gameRunning || playerStats.aether < playerStats.aetherCost || skillOnCooldown) return;
                 
                 playerStats.aether -= playerStats.aetherCost; // 扣除消耗
                 playerStats.aetherCost += AETHER_COST_INCREASE; // v13 GAI: 增加下一次消耗
@@ -1119,13 +1310,26 @@
                     case 'Swarm':
                         spawnSwarm(true);
                         break;
+                    // v18 GAI: 新技能
+                    case 'Elementalist':
+                        playerStats.skillActiveTimer2 = 5.0; // 5秒风暴
+                        break;
+                    case 'Illusionist':
+                        triggerTeleport(true);
+                        break;
+                    // v20 GAI: 圣盾技能
+                    case 'Aegis':
+                        playerStats.skillActiveTimer = 8.0; // 8秒CD
+                        playerStats.isImmune = true;
+                        break;
                 }
                 updateUI();
             }
             
-            // v13 GAI: AI 释放技能 (动态消耗)
+            // v20 GAI: AI 释放技能
             function aiActivateSkill() {
-                if (!gameRunning || aiStats.aether < aiStats.aetherCost || aiStats.skillActiveTimer > 0) return;
+                const skillOnCooldown = aiStats.skillActiveTimer > 0 || aiStats.skillActiveTimer2 > 0;
+                if (!gameRunning || aiStats.aether < aiStats.aetherCost || skillOnCooldown) return;
                 
                 aiStats.aether -= aiStats.aetherCost;
                 aiStats.aetherCost += AETHER_COST_INCREASE;
@@ -1141,37 +1345,61 @@
                     case 'Swarm':
                         spawnSwarm(false);
                         break;
+                    // v18 GAI: 新技能
+                    case 'Elementalist':
+                        aiStats.skillActiveTimer2 = 5.0; // 5秒风暴
+                        break;
+                    case 'Illusionist':
+                        triggerTeleport(false);
+                        break;
+                    // v20 GAI: 圣盾技能
+                    case 'Aegis':
+                        aiStats.skillActiveTimer = 8.0; // 8秒CD
+                        aiStats.isImmune = true;
+                        break;
                 }
             }
 
-            // AI 逻辑
+            // v20 GAI: AI 逻辑
             function updateAI(delta) {
                 const totalAILevel = aiStats.levelSpeed + aiStats.levelPower + aiStats.levelSpecial;
-                aiStats.energy += ENERGY_RATE * (0.9 + totalAILevel * ENERGY_LEVEL_BONUS) * delta; // v16 GAI
+                
+                // v20 GAI: 圣盾技能
+                if (!aiStats.isImmune) {
+                    aiStats.energy += ENERGY_RATE * (0.9 + totalAILevel * ENERGY_LEVEL_BONUS) * delta; 
+                }
                 aiDecisionTimer -= delta * 1000;
                 
-                // v13 GAI: AI 技能决策 (检查动态消耗)
+                // v20 GAI: AI 技能决策 (6职业)
                 if (aiStats.aether >= aiStats.aetherCost) {
-                    if (aiStats.class === 'Commander' && aiStats.health < BASE_HEALTH * 0.6) {
-                        aiActivateSkill();
+                    if ((aiStats.class === 'Commander' || aiStats.class === 'Aegis') && aiStats.health < BASE_HEALTH * 0.6) {
+                        aiActivateSkill(); // 统帅和圣盾低血量开技能
                     } else if (aiStats.class === 'Swarm' && playerStats.health < BASE_HEALTH * 0.5) {
                          aiActivateSkill(); // 斩杀
                     } else if (aiStats.class === 'Berserker' && aiStats.health < BASE_HEALTH * 0.7) {
                          aiActivateSkill(); // 拼命
+                    } else if (aiStats.class === 'Elementalist' && Math.random() < 0.1) {
+                         aiActivateSkill(); // 元素使随机开
+                    } else if (aiStats.class === 'Illusionist' && Math.random() < 0.1) {
+                         aiActivateSkill(); // 幻术师随机开
                     } else if (Math.random() < 0.3) {
                          aiActivateSkill(); // 随机使用
                     }
                 }
 
-                // AI 升级决策
+                // v20 GAI: AI 升级决策 (6职业)
                 if (aiDecisionTimer <= 0) {
-                    aiDecisionTimer = Math.random() * 1000 + 500;
+                    aiDecisionTimer = Math.random() * 800 + 400; // AI 决策更快
                     
-                    const prefersPower = aiStats.class === 'Berserker';
+                    const prefersPower = aiStats.class === 'Berserker' || aiStats.class === 'Elementalist';
                     const prefersSpeed = aiStats.class === 'Swarm';
-                    
+                    const prefersTactic = aiStats.class === 'Commander' || aiStats.class === 'Illusionist' || aiStats.class === 'Aegis';
+
                     if (aiStats.health < BASE_HEALTH * 0.4 && aiStats.energy >= aiStats.costPower) {
                         aiUpgrade('damage'); 
+                    }
+                    else if (prefersTactic && aiStats.energy >= aiStats.costSpecial && aiStats.levelSpecial < aiStats.levelPower) {
+                        aiUpgrade('tactic');
                     } 
                     else if (prefersPower && aiStats.energy >= aiStats.costPower) {
                         aiUpgrade('damage');
@@ -1179,14 +1407,14 @@
                     else if (prefersSpeed && aiStats.energy >= aiStats.costSpeed) {
                         aiUpgrade('quantity');
                     }
-                    else if (aiStats.energy >= aiStats.costSpeed && aiStats.levelSpeed <= aiStats.levelPower + 1) {
+                    else if (aiStats.energy >= aiStats.costSpecial && aiStats.levelSpecial < 5 && Math.random() < 0.2) {
+                        aiUpgrade('tactic');
+                    }
+                    else if (aiStats.energy >= aiStats.costSpeed && aiStats.levelSpeed <= aiStats.levelPower + 2) {
                         aiUpgrade('quantity');
                     }
                     else if (aiStats.energy >= aiStats.costPower) {
                         aiUpgrade('damage');
-                    }
-                    else if (aiStats.energy >= aiStats.costSpecial && aiStats.levelSpecial < 5) {
-                        aiUpgrade('tactic');
                     }
                     else if (aiStats.energy >= aiStats.costSpeed) {
                         aiUpgrade('quantity');
@@ -1194,7 +1422,7 @@
                 }
             }
             
-            // v12 GAI: 产生一群单位 (虫群技能)
+            // v18 GAI: 产生一群单位 (虫群技能强化)
             function spawnSwarm(isPlayer) {
                 const stats = isPlayer ? playerStats : aiStats;
                 for (let i = 0; i < 20; i++) {
@@ -1207,34 +1435,100 @@
                         activeParticles.push(p);
                     }
                 }
+                // v18 GAI: 虫群技能强化 - 3秒加速
+                if (stats.class === 'Swarm') {
+                     for (const p of activeParticles) {
+                        if (p.active && !p.isEffect && p.isPlayer === isPlayer) {
+                            if (p.boostTimer <= 0) p.vy *= 1.5; // 只加速一次
+                            p.boostTimer = 3.0; 
+                        }
+                    }
+                }
             }
             
-            // v12 GAI: 产生幼虫 (虫群战术)
-            function spawnLarva(x, y, isPlayer) {
+            // v18 GAI: 产生幼虫 (虫群战术 - 继承伤害)
+            function spawnLarva(x, y, isPlayer, hostPower) {
                 const stats = isPlayer ? playerStats : aiStats;
                 const p = getParticleFromPool();
                 if (p) {
-                    // v15 GAI: 幼虫不受战术加成
-                    p.init(x, y, isPlayer, stats.power * 0.2, false, 'Berserker', true, false, stats); // 20% 伤害
+                    // v18 GAI: 幼虫继承 15% 宿主伤害
+                    p.init(x, y, isPlayer, hostPower * 0.15, false, 'Berserker', true, false, stats); 
                     activeParticles.push(p);
                 }
             }
             
-            // v13 GAI: 产生老兵 (统帅战术)
+            // v20 GAI: 产生老兵 (统帅战术 - 分散)
             function spawnVeterans(x, y, isPlayer, count = 3) {
                 const stats = isPlayer ? playerStats : aiStats;
+                // v18 GAI: 统帅被动强化
+                const tacticMod = (stats.class === 'Commander') ? (stats.tacticPowerMod * 1.2) : stats.tacticPowerMod;
                 for (let i = 0; i < count; i++) {
                     const p = getParticleFromPool();
                     if (p) {
                         // v15 GAI: 老兵受战术加成
-                        const power = stats.power * 2 * stats.tacticPowerMod;
+                        const power = stats.power * 2 * tacticMod;
                         p.init(x + Math.random()*20-10, y + Math.random()*20-10, isPlayer, power, false, 'Berserker', false, true, stats); 
+                        
+                        // v20 GAI: 分散
+                        if (i === 0) p.vx = -0.5;
+                        if (i === 2) p.vx = 0.5;
+                        
                         activeParticles.push(p);
                     }
                 }
             }
 
-            // v15 GAI: 产生粒子
+            // v18 GAI: 触发传送 (幻术师技能)
+            function triggerTeleport(isPlayer) {
+                const stats = isPlayer ? playerStats : aiStats;
+                const particlesToTeleport = activeParticles
+                    .filter(p => p.active && !p.isEffect && p.isPlayer === isPlayer && (isPlayer ? p.y > playerBaseEdge - 80 : p.y < aiBaseEdge + 80))
+                    .slice(0, 5); // 最后5个
+                
+                for (const p of particlesToTeleport) {
+                    p.y = H / 2 + (Math.random() - 0.5) * (H * 0.2); // 中场随机
+                    p.x = Math.random() * W;
+                    if (p.boostTimer <= 0) p.vy *= 2.0; // 只加速一次
+                    p.boostTimer = 3.0; // 持续3秒
+                }
+            }
+            
+            // v18 GAI: 触发减速波 (统帅技能)
+            function triggerSlowWave(isPlayer) {
+                const opponentIsPlayer = !isPlayer;
+                for (const p of activeParticles) {
+                    if (p.active && !p.isEffect && p.isPlayer === opponentIsPlayer) {
+                        if (p.boostTimer <= 0) p.vy /= 1.3; // 减速 30%
+                        p.boostTimer = 1.5; // 持续 1.5 秒 (结束后恢复)
+                    }
+                }
+            }
+            
+            // v20 GAI: 触发治疗波 (圣盾战术)
+            function triggerHealWave(x, y, isPlayer, healAmount) {
+                const healRadius = 60;
+                // 视觉特效
+                spawnSpark(x, y, 60, 100, 80, 15, false); // 黄色治疗火花
+                
+                const stats = isPlayer ? playerStats : aiStats;
+                
+                for (const p of activeParticles) {
+                    if (!p.active || p.isEffect || p.isPlayer !== isPlayer) continue;
+                    
+                    const dx = p.x - x;
+                    const dy = p.y - y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (dist < healRadius) {
+                        // 治疗 (不超过最大生命值)
+                        p.power = Math.min(p.maxPower, p.power + healAmount); 
+                        updateParticleVisuals(p, stats); // 更新视觉
+                    }
+                }
+            }
+
+
+            // v20 GAI: 产生粒子
             let playerSpawnAccumulator = 0;
             let aiSpawnAccumulator = 0;
             function spawnParticles(delta) {
@@ -1249,14 +1543,18 @@
                         const isSpecial = Math.random() < playerStats.specialChance;
                         
                         let basePower = playerStats.power;
-                        if (playerStats.skillActiveTimer > 0) basePower *= 2; // [过载]
+                        if (playerStats.skillActiveTimer > 0 && playerStats.class === 'Berserker') basePower *= 2; // [过载]
                         
-                        // v15 GAI: 「传奇进化」 效果
-                        const power = isSpecial ? (basePower * 5 * playerStats.tacticPowerMod) : basePower;
+                        // v18 GAI: 统帅被动强化
+                        let tacticMod = playerStats.tacticPowerMod;
+                        if (isSpecial && playerStats.class === 'Commander') {
+                            tacticMod *= 1.2; // 20% 额外血量
+                        }
+                        const power = isSpecial ? (basePower * 5 * tacticMod) : basePower;
                         const tactic = isSpecial ? playerStats.class : 'Berserker';
                         
                         p.init(x, y, true, power, isSpecial, tactic, false, false, playerStats);
-                        if (playerStats.skillActiveTimer > 0) p.isOverloaded = true;
+                        if (playerStats.skillActiveTimer > 0 && playerStats.class === 'Berserker') p.isOverloaded = true;
                         
                         activeParticles.push(p);
                     }
@@ -1271,14 +1569,18 @@
                         const isSpecial = Math.random() < aiStats.specialChance;
 
                         let basePower = aiStats.power;
-                        if (aiStats.skillActiveTimer > 0) basePower *= 2; // AI [过载]
+                        if (aiStats.skillActiveTimer > 0 && aiStats.class === 'Berserker') basePower *= 2; // AI [过载]
                         
-                        // v15 GAI: 「传奇进化」 效果
-                        const power = isSpecial ? (basePower * 5 * aiStats.tacticPowerMod) : basePower;
+                        // v18 GAI: 统帅被动强化
+                        let tacticMod_ai = aiStats.tacticPowerMod;
+                        if (isSpecial && aiStats.class === 'Commander') {
+                            tacticMod_ai *= 1.2; // 20% 额外血量
+                        }
+                        const power = isSpecial ? (basePower * 5 * tacticMod_ai) : basePower;
                         const tactic = isSpecial ? aiStats.class : 'Berserker';
 
                         p.init(x, y, false, power, isSpecial, tactic, false, false, aiStats);
-                        if (aiStats.skillActiveTimer > 0) p.isOverloaded = true;
+                        if (aiStats.skillActiveTimer > 0 && aiStats.class === 'Berserker') p.isOverloaded = true;
 
                         activeParticles.push(p);
                     }
@@ -1297,7 +1599,7 @@
                 }
             }
             
-            // v14 GAI: 新增 - 护盾受击
+            // v18 GAI: 护盾受击
             function triggerShieldHitEffect(isPlayerBase, damage, x_coord, y_coord) {
                 const stats = isPlayerBase ? playerStats : aiStats;
                 
@@ -1305,28 +1607,37 @@
                 
                 if (stats.shield <= 0) {
                     stats.shieldTimer = 0; // 护盾被击破
+                    if (stats.class === 'Commander') triggerSlowWave(isPlayerBase); // v18 GAI: 统帅护盾波
                     stats.shield = 0;
                 }
                 
                 // 产生蓝白色格挡火花
                 spawnSpark(x_coord, y_coord, 200, 50, 100, 5, false); 
                 
-                // v14 GAI: 攻击护盾给少量以太
+                // v18 GAI: 元素使以太获取强化
                 const attackerStats = isPlayerBase ? aiStats : playerStats;
                 const attackerCost = isPlayerBase ? aiStats.aetherCost : playerStats.aetherCost;
-                attackerStats.aether = Math.min(attackerCost * AETHER_BANK_CAP_MULTIPLIER, attackerStats.aether + damage * 0.05); // 0.05 (护盾) vs 0.15 (基地)
+                const aetherGain = (attackerStats.class === 'Elementalist') ? 0.05 * 1.25 : 0.05;
+                attackerStats.aether = Math.min(attackerCost * AETHER_BANK_CAP_MULTIPLIER, attackerStats.aether + damage * aetherGain); 
             }
 
 
-            // v13 GAI: 基地受击特效 (护盾逻辑)
+            // v20 GAI: 基地受击特效
             function triggerBaseHitEffect(isPlayerBase, damage, x_coord, isSilent = false) {
                 const stats = isPlayerBase ? playerStats : aiStats;
+                
+                // v20 GAI: 圣盾技能
+                if (stats.isImmune) return;
+                
                 let damageToHealth = damage;
                 
-                // v13 GAI: 护盾逻辑 (v14中这个不应该被触发, 除非护盾刚好消失)
+                // v20 GAI: 圣盾被动
+                damageToHealth *= (1.0 - stats.damageReduction);
+                
+                // v13 GAI: 护盾逻辑
                 if (stats.shieldTimer > 0 && stats.shield > 0) {
-                    const damageToShield = Math.min(stats.shield, damage);
-                    damageToHealth = damage - damageToShield;
+                    const damageToShield = Math.min(stats.shield, damageToHealth);
+                    damageToHealth -= damageToShield;
                     stats.shield -= damageToShield;
                 }
                 
@@ -1362,18 +1673,24 @@
                         screenShake.intensity = Math.max(screenShake.intensity, shakeIntensity);
                         screenShake.duration = 0.2; // 持续0.2秒
                     }
-                    // v14 GAI: 击中AI基地增加以太 (收益降低, 银行上限)
-                    playerStats.aether = Math.min(playerStats.aetherCost * AETHER_BANK_CAP_MULTIPLIER, playerStats.aether + damage * 0.15);
+                    // v18 GAI: 元素使以太获取强化
+                    const aetherGain = (playerStats.class === 'Elementalist') ? 0.15 * 1.25 : 0.15;
+                    playerStats.aether = Math.min(playerStats.aetherCost * AETHER_BANK_CAP_MULTIPLIER, playerStats.aether + damage * aetherGain);
                 }
             }
             
-            // v12 GAI: 自爆巨兽 (Berserker) 爆炸
-            function triggerExplosion(x, y, isPlayer, damage) {
+            // v18 GAI: 爆炸 (狂战士 / 元素使)
+            function triggerExplosion(x, y, isPlayer, damage, type = 'normal') {
                 // 视觉特效
-                spawnSpark(x, y, 0, 100, 70, 20, true); // 20个猛烈火花
+                const hue = (type === 'burn') ? 30 : 0;
+                spawnSpark(x, y, hue, 100, 70, 20, true); 
                 
                 // 范围伤害
-                const explosionRadius = 70; 
+                let explosionRadius = 70;
+                // v18 GAI: 狂战士被动强化
+                const stats = isPlayer ? playerStats : aiStats;
+                if (stats.class === 'Berserker') explosionRadius = 77; // +10%
+                
                 for (const p of activeParticles) {
                     if (!p.active || p.isEffect || p.isPlayer === isPlayer) continue;
                     
@@ -1382,14 +1699,20 @@
                     const dist = Math.sqrt(dx*dx + dy*dy);
                     
                     if (dist < explosionRadius) {
-                        p.power -= damage; // 造成伤害
-                        if (p.power <= 0) {
-                            p.active = false;
-                            spawnSpark(p.x, p.y, p.hue, p.saturation, p.lightness, 3);
-                            // v14 GAI: 爆炸击杀也给以太
-                            const killerStats = isPlayer ? playerStats : aiStats;
-                            const killerCost = isPlayer ? playerStats.aetherCost : aiStats.aetherCost;
-                            killerStats.aether = Math.min(killerCost * AETHER_BANK_CAP_MULTIPLIER, killerStats.aether + 0.5);
+                        // v18 GAI: 元素使战术
+                        if (type === 'burn') {
+                            p.burnTimer = 4.0;
+                            p.burnDamage = damage * 0.5; // 造成 50% 伤害的燃烧
+                        } else {
+                            p.power -= damage; // 造成伤害
+                            if (p.power <= 0) {
+                                p.active = false;
+                                spawnSpark(p.x, p.y, p.hue, p.saturation, p.lightness, 3);
+                                // v14 GAI: 爆炸击杀也给以太
+                                const killerStats = isPlayer ? playerStats : aiStats;
+                                const killerCost = isPlayer ? playerStats.aetherCost : aiStats.aetherCost;
+                                killerStats.aether = Math.min(killerCost * AETHER_BANK_CAP_MULTIPLIER, killerStats.aether + 0.5);
+                            }
                         }
                     }
                 }
@@ -1435,83 +1758,146 @@
                 }
             }
             
-            // 碰撞处理
+            // v20 GAI: 碰撞处理 (6职业)
             function handleCollision(p1, p2) {
                 if (!p1.active || !p2.active || p1.isPlayer === p2.isPlayer) return;
                 
-                // v14 GAI: 碰撞增加双方以太 (银行上限)
-                playerStats.aether = Math.min(playerStats.aetherCost * AETHER_BANK_CAP_MULTIPLIER, playerStats.aether + 0.3);
-                aiStats.aether = Math.min(aiStats.aetherCost * AETHER_BANK_CAP_MULTIPLIER, aiStats.aether + 0.3);
+                // v18 GAI: 元素使以太获取强化
+                const playerAetherGain = (playerStats.class === 'Elementalist') ? 0.3 * 1.25 : 0.3;
+                const aiAetherGain = (aiStats.class === 'Elementalist') ? 0.3 * 1.25 : 0.3;
+                playerStats.aether = Math.min(playerStats.aetherCost * AETHER_BANK_CAP_MULTIPLIER, playerStats.aether + playerAetherGain);
+                aiStats.aether = Math.min(aiStats.aetherCost * AETHER_BANK_CAP_MULTIPLIER, aiStats.aether + aiAetherGain);
                 
                 const midX = (p1.x + p2.x) / 2;
                 const midY = (p1.y + p2.y) / 2;
                 
-                if (p1.power > p2.power) {
-                    p1.power -= p2.power;
-                    p2.active = false;
-                    spawnSpark(midX, midY, p1.hue, p1.saturation, p1.lightness, 5); // 红色火花
+                let p1HitPower = p1.power;
+                let p2HitPower = p2.power;
+                let p1Stats = p1.isPlayer ? playerStats : aiStats;
+                let p2Stats = p2.isPlayer ? playerStats : aiStats;
+
+                // 幻术师 T3
+                if (p1.isSpecial && p1.tacticType === 'Illusionist' && p1.hasHit) p1HitPower *= 2.0;
+                if (p2.isSpecial && p2.tacticType === 'Illusionist' && p2.hasHit) p2HitPower *= 2.0;
+                
+                // v18 GAI: 幻术师被动闪避
+                if (p1Stats.class === 'Illusionist' && !p1.isSpecial && !p2.isSpecial && Math.random() < 0.15) {
+                    p2.power -= p1HitPower; // p1 造成伤害
+                    if (p2.power <= 0) p2.active = false;
+                    return; // p1 闪避成功
+                }
+                if (p2Stats.class === 'Illusionist' && !p2.isSpecial && !p1.isSpecial && Math.random() < 0.15) {
+                    p1.power -= p2HitPower; // p2 造成伤害
+                    if (p1.power <= 0) p1.active = false;
+                    return; // p2 闪避成功
+                }
+
+
+                if (p1HitPower > p2HitPower) {
+                    // p1 获胜
+                    p1.power -= p2HitPower; // p1 受到伤害
+                    p2.active = false; // p2 死亡
+                    spawnSpark(midX, midY, p1.hue, p1.saturation, p1.lightness, 5); 
                     
-                    // v13 GAI: 检查 p2 (ai) 战术死亡
+                    // p1 幻术师 T3 效果
+                    if (p1.isSpecial && p1.tacticType === 'Illusionist' && p1.hasHit) {
+                        p1.hasHit = false; p1.power /= 2.0; p1.lightness = 40;
+                    }
+                    // p1 元素使被动
+                    if (p1.isPlayer && playerStats.burnOnHit > 0) { p2.burnTimer = 2.0; p2.burnDamage = playerStats.burnOnHit; }
+                    if (!p1.isPlayer && aiStats.burnOnHit > 0) { p2.burnTimer = 2.0; p2.burnDamage = aiStats.burnOnHit; }
+                    
+                    // 检查 p2 战术死亡
                     if (p2.isSpecial) {
                         if (p2.tacticType === 'Berserker') {
-                            triggerExplosion(p2.x, p2.y, p2.isPlayer, p2.power * 0.5); // 用原始力量的一半爆炸
+                            triggerExplosion(p2.x, p2.y, p2.isPlayer, p2.power * 0.5);
                         } else if (p2.tacticType === 'Commander') {
                             spawnVeterans(p2.x, p2.y, p2.isPlayer, 3);
+                        } else if (p2.tacticType === 'Elementalist') {
+                            triggerExplosion(p2.x, p2.y, p2.isPlayer, p2.power, 'burn');
+                        } else if (p2.tacticType === 'Aegis') { // v20 GAI
+                            triggerHealWave(p2.x, p2.y, p2.isPlayer, p2.maxPower * 0.5); // 治疗 50%
                         }
                     }
                     
-                    // v11 GAI: 碰撞后力量降低，视觉效果也应降低
-                    if (!p1.isSpecial && !p1.isVeteran) {
-                         const powerNormal = Math.min(p1.power / 15.0, 1.0);
-                         p1.radius = 3 + 5 * powerNormal;
-                         p1.lightness = 50 + 30 * powerNormal;
-                    } else if (p1.isSpecial) {
-                         const powerNormal = Math.min(p1.power / (75.0 * playerStats.tacticPowerMod), 1.0);
-                         p1.radius = 9 + 7 * powerNormal;
-                         p1.lightness = 60 + 30 * powerNormal;
+                } else if (p2HitPower > p1HitPower) {
+                    // p2 获胜
+                    p2.power -= p1HitPower; // p2 受到伤害
+                    p1.active = false; // p1 死亡
+                    spawnSpark(midX, midY, p2.hue, p2.saturation, p2.lightness, 5); 
+                    
+                    // p2 幻术师 T3 效果
+                    if (p2.isSpecial && p2.tacticType === 'Illusionist' && p2.hasHit) {
+                        p2.hasHit = false; p2.power /= 2.0; p2.lightness = 40;
                     }
-                    
-                } else if (p2.power > p1.power) {
-                    p2.power -= p1.power;
-                    p1.active = false;
-                    spawnSpark(midX, midY, p2.hue, p2.saturation, p2.lightness, 5); // 蓝色火花
-                    
-                    // v13 GAI: 检查 p1 (player) 战术死亡
+                    // p2 元素使被动
+                    if (p2.isPlayer && playerStats.burnOnHit > 0) { p1.burnTimer = 2.0; p1.burnDamage = playerStats.burnOnHit; }
+                    if (!p2.isPlayer && aiStats.burnOnHit > 0) { p1.burnTimer = 2.0; p1.burnDamage = aiStats.burnOnHit; }
+
+                    // 检查 p1 战术死亡
                     if (p1.isSpecial) {
                         if (p1.tacticType === 'Berserker') {
                             triggerExplosion(p1.x, p1.y, p1.isPlayer, p1.power * 0.5);
                         } else if (p1.tacticType === 'Commander') {
                             spawnVeterans(p1.x, p1.y, p1.isPlayer, 3);
+                        } else if (p1.tacticType === 'Elementalist') {
+                            triggerExplosion(p1.x, p1.y, p1.isPlayer, p1.power, 'burn');
+                        } else if (p1.tacticType === 'Aegis') { // v20 GAI
+                            triggerHealWave(p1.x, p1.y, p1.isPlayer, p1.maxPower * 0.5); // 治疗 50%
                         }
                     }
-
-                    // v11 GAI: 碰撞后力量降低，视觉效果也应降低
-                    if (!p2.isSpecial && !p2.isVeteran) {
-                         const powerNormal = Math.min(p2.power / 15.0, 1.0);
-                         p2.radius = 3 + 5 * powerNormal;
-                         p2.lightness = 50 + 30 * powerNormal;
-                    } else if (p2.isSpecial) {
-                         const powerNormal = Math.min(p2.power / (75.0 * aiStats.tacticPowerMod), 1.0);
-                         p2.radius = 9 + 7 * powerNormal;
-                         p2.lightness = 60 + 30 * powerNormal;
-                    }
+                    
                 } else {
                     // Tie
                     p1.active = false;
                     p2.active = false;
                     spawnSpark(midX, midY, 0, 0, 100, 8); // 白色火花
                     
-                    // v13 GAI: 检查双方战术死亡
+                    // 检查双方战术死亡
                     if (p1.isSpecial) {
                         if (p1.tacticType === 'Berserker') triggerExplosion(p1.x, p1.y, p1.isPlayer, p1.power * 0.5);
                         else if (p1.tacticType === 'Commander') spawnVeterans(p1.x, p1.y, p1.isPlayer, 3);
+                        else if (p1.tacticType === 'Elementalist') triggerExplosion(p1.x, p1.y, p1.isPlayer, p1.power, 'burn');
+                        else if (p1.tacticType === 'Aegis') triggerHealWave(p1.x, p1.y, p1.isPlayer, p1.maxPower * 0.5);
                     }
                     if (p2.isSpecial) {
                         if (p2.tacticType === 'Berserker') triggerExplosion(p2.x, p2.y, p2.isPlayer, p2.power * 0.5);
                         else if (p2.tacticType === 'Commander') spawnVeterans(p2.x, p2.y, p2.isPlayer, 3);
+                        else if (p2.tacticType === 'Elementalist') triggerExplosion(p2.x, p2.y, p2.isPlayer, p2.power, 'burn');
+                        else if (p2.tacticType === 'Aegis') triggerHealWave(p2.x, p2.y, p2.isPlayer, p2.maxPower * 0.5);
                     }
                 }
+                
+                // v18 GAI: 碰撞后更新双方视觉
+                if(p1.active) updateParticleVisuals(p1, p1Stats);
+                if(p2.active) updateParticleVisuals(p2, p2Stats);
             }
+            
+            // v18 GAI: 更新粒子视觉 (碰撞后)
+            function updateParticleVisuals(p, stats) {
+                if (!p.active) return;
+                
+                let powerNormal = 0;
+                if (p.isLarva) powerNormal = 0.0;
+                else if (p.isVeteran) powerNormal = 0.3;
+                else if (p.isSpecial) {
+                    // 幻术师 T3 变弱
+                    if (p.tacticType === 'Illusionist' && !p.hasHit) {
+                        p.power = Math.min(p.power, 1.0); // 变回基础单位
+                        powerNormal = 0.1; 
+                    } else {
+                         powerNormal = Math.min(p.power / (75.0 * stats.tacticPowerMod), 1.0);
+                    }
+                    p.radius = 9 + 7 * powerNormal;
+                    p.lightness = 60 + 30 * powerNormal;
+                }
+                else {
+                    powerNormal = Math.min(p.power / 15.0, 1.0);
+                    p.radius = 3 + 5 * powerNormal;
+                    p.lightness = 50 + 30 * powerNormal;
+                }
+            }
+
 
             // 游戏主循环
             function gameLoop(now) {
@@ -1535,27 +1921,68 @@
                     if (playerHitAlpha < 0) playerHitAlpha = 0;
                 }
                 
-                // V13 GAI: 更新技能计时器
-                if (playerStats.skillActiveTimer > 0) playerStats.skillActiveTimer -= delta;
-                if (aiStats.skillActiveTimer > 0) aiStats.skillActiveTimer -= delta;
+                // V20 GAI: 更新技能计时器
+                if (playerStats.skillActiveTimer > 0) {
+                    playerStats.skillActiveTimer -= delta;
+                    if (playerStats.skillActiveTimer <= 0 && playerStats.isImmune) {
+                        playerStats.isImmune = false; // 圣盾无敌结束
+                    }
+                }
+                if (playerStats.skillActiveTimer2 > 0) playerStats.skillActiveTimer2 -= delta;
                 
-                // V13 GAI: 更新护盾计时器
+                if (aiStats.skillActiveTimer > 0) {
+                    aiStats.skillActiveTimer -= delta;
+                    if (aiStats.skillActiveTimer <= 0 && aiStats.isImmune) {
+                        aiStats.isImmune = false; // AI圣盾无敌结束
+                    }
+                }
+                if (aiStats.skillActiveTimer2 > 0) aiStats.skillActiveTimer2 -= delta;
+                
+                // V18 GAI: 更新护盾计时器 (统帅强化)
                 if (playerStats.shieldTimer > 0) {
                     playerStats.shieldTimer -= delta;
-                    if (playerStats.shieldTimer <= 0) playerStats.shield = 0;
+                    if (playerStats.shieldTimer <= 0) {
+                        playerStats.shield = 0;
+                        if (playerStats.class === 'Commander') triggerSlowWave(true); // 护盾消失
+                    }
                 }
                 if (aiStats.shieldTimer > 0) {
                     aiStats.shieldTimer -= delta;
-                    if (aiStats.shieldTimer <= 0) aiStats.shield = 0;
+                    if (aiStats.shieldTimer <= 0) {
+                        aiStats.shield = 0;
+                        if (aiStats.class === 'Commander') triggerSlowWave(false); // 护盾消失
+                    }
                 }
 
 
                 // --- 逻辑更新 ---
                 const totalPlayerLevel = playerStats.levelSpeed + playerStats.levelPower + playerStats.levelSpecial;
-                playerStats.energy += ENERGY_RATE * (0.9 + totalPlayerLevel * ENERGY_LEVEL_BONUS) * delta; // v16 GAI
+                
+                // v20 GAI: 圣盾技能
+                if (!playerStats.isImmune) {
+                    playerStats.energy += ENERGY_RATE * (0.9 + totalPlayerLevel * ENERGY_LEVEL_BONUS) * delta; 
+                }
                 
                 updateAI(delta);
                 spawnParticles(delta);
+
+                // v18 GAI: 元素使技能
+                const stormY = H * 0.4;
+                const stormHeight = H * 0.2;
+                if (playerStats.skillActiveTimer2 > 0 || aiStats.skillActiveTimer2 > 0) {
+                     for (const p of activeParticles) {
+                         if (p.active && !p.isEffect && p.y > stormY && p.y < stormY + stormHeight) {
+                            if (playerStats.skillActiveTimer2 > 0) {
+                                p.burnTimer = 1.0;
+                                p.burnDamage = 5.0; // 5 dps
+                            }
+                            if (aiStats.skillActiveTimer2 > 0) {
+                                p.burnTimer = 1.0;
+                                p.burnDamage = 5.0; // 5 dps
+                            }
+                         }
+                     }
+                }
 
                 for (let i = activeParticles.length - 1; i >= 0; i--) {
                     const p = activeParticles[i];
@@ -1599,6 +2026,51 @@
                     effect.life -= delta * 3.0; 
                     if (effect.life <= 0) activeHitEffects.splice(i, 1);
                 }
+
+                // v18 GAI: 绘制烈焰风暴
+                if (playerStats.skillActiveTimer2 > 0) {
+                    ctx.fillStyle = `rgba(255, 100, 0, ${0.1 + Math.sin(now/100) * 0.05})`;
+                    ctx.fillRect(0, stormY, W, stormHeight);
+                }
+                if (aiStats.skillActiveTimer2 > 0) {
+                    ctx.fillStyle = `rgba(255, 100, 0, ${0.1 + Math.sin(now/100) * 0.05})`;
+                    ctx.fillRect(0, stormY, W, stormHeight);
+                }
+                
+                // v20 GAI: 绘制圣盾无敌
+                if (playerStats.isImmune) {
+                    const t = playerStats.skillActiveTimer / 8.0; // 0 -> 1
+                    ctx.strokeStyle = `rgba(255, 230, 150, ${t * 0.8})`;
+                    ctx.fillStyle = `rgba(255, 230, 150, ${t * 0.3})`;
+                    ctx.lineWidth = 5;
+                    ctx.beginPath();
+                    ctx.moveTo(0, playerBaseEdge);
+                    for (let x = 0; x <= W; x += 20) {
+                        const shieldY = playerBaseEdge - 80 * (t * (1 - t)) * 4; // 拱形
+                        ctx.lineTo(x, shieldY);
+                    }
+                    ctx.lineTo(W, playerBaseEdge);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+                if (aiStats.isImmune) {
+                    const t = aiStats.skillActiveTimer / 8.0; // 0 -> 1
+                    ctx.strokeStyle = `rgba(255, 230, 150, ${t * 0.8})`;
+                    ctx.fillStyle = `rgba(255, 230, 150, ${t * 0.3})`;
+                    ctx.lineWidth = 5;
+                    ctx.beginPath();
+                    ctx.moveTo(0, aiBaseEdge);
+                    for (let x = 0; x <= W; x += 20) {
+                        const shieldY = aiBaseEdge + 80 * (t * (1 - t)) * 4; // 拱形
+                        ctx.lineTo(x, shieldY);
+                    }
+                    ctx.lineTo(W, aiBaseEdge);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
 
                 // 绘制所有粒子 (火花、拖尾、本体)
                 for (const p of activeParticles) {
@@ -1656,12 +2128,12 @@
                 gameLoopId = requestAnimationFrame(gameLoop);
             }
             
-            // --- v16 GAI: Tooltip 提示框逻辑 (更新) ---
+            // --- v20 GAI: Tooltip 提示框逻辑 (6职业) ---
             const tooltipData = {
                 'quantity': {
                     desc: "提升你所有单位的产生速度。",
                     bonus: "虫群职业: 额外 +30% 效果。",
-                    cost: "狂战士职业: -30% 效果。",
+                    cost: "狂战士职业: -30% 效果。\n圣盾: 升级成本 +10% 效果。",
                     expertise: {
                         'Flood': "「洪流」: 升级成本 -20%",
                         'Vanguard': "「先锋」: 基础单位移速 +20%"
@@ -1669,7 +2141,7 @@
                 },
                 'damage': {
                     desc: "提升你所有单位的伤害、体积和亮度。",
-                    bonus: "狂战士职业: 额外 +30% 效果。",
+                    bonus: "狂战士职业: 额外 +40% 效果。\n元素使: 附加“燃烧”持续伤害。",
                     cost: "虫群职业: -30% 效果。",
                     expertise: {
                         'Focus': "「毁灭专注」: 伤害效果 +20%, 数量成本 +10%",
@@ -1678,19 +2150,25 @@
                 },
                 'tactic': {
                     desc: {
-                        'Commander': "提升你 [守护巨兽] 的出现几率。\n特性: 死亡时分裂成 3 个老兵单位。",
-                        'Berserker': "提升你 [自爆巨兽] 的出现几率。\n特性: 死亡时对周围敌人造成范围伤害。",
-                        'Swarm': "提升你 [孵化领主] 的出现几率。\n特性: 在前进时会免费孵化出幼虫。"
+                        'Commander': "提升 [守护巨兽] 几率。\n特性: 死亡分裂成3个[老兵]，[老兵]和[巨兽]拥有额外生命值，且会分散出击。",
+                        'Berserker': "提升 [自爆巨兽] 几率。\n特性: 死亡时造成更大范围的AOE伤害。",
+                        'Swarm': "提升 [孵化领主] 几率。\n特性: 孵化的[幼虫]会继承领主 15% 的伤害。",
+                        'Elementalist': "提升 [熔火核心] 几率。(成本+10%)\n特性: 死亡时爆炸，对周围敌人施加一个强效的“燃烧”效果。",
+                        'Illusionist': "提升 [幻影刺客] 几率。(成本+10%)\n特性: 移速快，首次攻击造成额外伤害，随后变弱。",
+                        'Aegis': "提升 [圣殿卫士] 几率。\n特性: 移速慢，死亡时释放治疗波，恢复小范围友军生命值。"
                     },
                     expertise: {
-                        'Legend': "「传奇进化」: 战术单位基础属性 +25%",
+                        'Legend': "「传奇进化」: 战术单位基础属性 +25% (统帅 +45%)",
                         'Synergy': "「战术协同」: 此升级也会降低技能消耗"
                     }
                 },
                 'skill': {
-                    'Commander': `为基地提供 200 点护盾，持续 10 秒。\n每使用一次，消耗永久增加 ${AETHER_COST_INCREASE}。`,
-                    'Berserker': `在 5 秒内，所有新单位获得双倍伤害。\n每使用一次，消耗永久增加 ${AETHER_COST_INCREASE}。`,
-                    'Swarm': `立即从基地召唤 20 个基础单位。\n每使用一次，消耗永久增加 ${AETHER_COST_INCREASE}。`
+                    'Commander': `[战术护盾]\n为基地提供 200 点护盾(10秒)。护盾消失或被击破时，释放一个短暂的减速波(1.5秒)。`,
+                    'Berserker': `[过载]\n在 5 秒内，所有新单位获得双倍伤害，但对你造成 8% 的反噬伤害。`,
+                    'Swarm': `[紧急增援]\n立即从基地召唤 20 个基础单位，并使你所有单位获得 3 秒的移速加成。`,
+                    'Elementalist': `[烈焰风暴]\n在战场中段召唤火焰风暴(5秒)，对穿过的<span style="color: red;">所有单位(敌我双方)</span>施加“燃烧”效果。`,
+                    'Illusionist': `[诡计传送]\n立即将你最后召唤的 5 个单位传送到战场中段，并使其获得 3 秒的移速加成。`,
+                    'Aegis': `[神圣庇护]\n使你的基地进入<span style="color: yellow;">无敌状态(8秒)</span>，但期间<span style="color: red;">能量获取完全停止</span>。`
                 }
             };
             
@@ -1707,25 +2185,31 @@
                 tooltipExpertise.style.display = 'none';
 
                 if (id === 'tactic') {
-                    tooltipDesc.innerText = data.desc[playerStats.class] || data.desc['Commander'];
+                    tooltipDesc.innerHTML = data.desc[playerStats.class] || data.desc['Commander'];
                     const expertise = playerStats.expertiseTactic;
                     if (expertise) {
                         tooltipExpertise.innerText = data.expertise[expertise];
                         tooltipExpertise.style.display = 'block';
                     }
                 } else if (id === 'skill') {
-                     tooltipData.skill.Commander = `为基地提供 200 点护盾，持续 10 秒。\n每使用一次，消耗永久增加 ${AETHER_COST_INCREASE}。`;
-                     tooltipData.skill.Berserker = `在 5 秒内，所有新单位获得双倍伤害。\n每使用一次，消耗永久增加 ${AETHER_COST_INCREASE}。`;
-                     tooltipData.skill.Swarm = `立即从基地召唤 20 个基础单位。\n每使用一次，消耗永久增加 ${AETHER_COST_INCREASE}。`;
-                     tooltipDesc.innerText = data[playerStats.class] || data['Commander'];
+                     // 动态更新消耗
+                     tooltipData.skill.Commander = `[战术护盾]\n为基地提供 200 点护盾(10秒)。护盾消失或被击破时，释放一个短暂的减速波(1.5秒)。\n<em class="cost">下次消耗 ${playerStats.aetherCost}</em>`;
+                     tooltipData.skill.Berserker = `[过载]\n在 5 秒内，所有新单位获得双倍伤害，但对你造成 8% 的反噬伤害。\n<em class="cost">下次消耗 ${playerStats.aetherCost}</em>`;
+                     tooltipData.skill.Swarm = `[紧急增援]\n立即从基地召唤 20 个基础单位，并使你所有单位获得 3 秒的移速加成。\n<em class="cost">下次消耗 ${playerStats.aetherCost}</em>`;
+                     tooltipData.skill.Elementalist = `[烈焰风暴]\n在战场中段召唤火焰风暴(5秒)，对穿过的<span style="color: red;">所有单位(敌我双方)</span>施加“燃烧”效果。\n<em class="cost">下次消耗 ${playerStats.aetherCost}</em>`;
+                     tooltipData.skill.Illusionist = `[诡计传送]\n立即将你最后召唤的 5 个单位传送到战场中段，并使其获得 3 秒的移速加成。\n<em class="cost">下次消耗 ${playerStats.aetherCost}</em>`;
+                     tooltipData.skill.Aegis = `[神圣庇护]\n使你的基地进入<span style="color: yellow;">无敌状态(8秒)</span>，但期间<span style="color: red;">能量获取完全停止</span>。\n<em class="cost">下次消耗 ${playerStats.aetherCost}</em>`;
+                     
+                     tooltipDesc.innerHTML = data[playerStats.class] || data['Commander'];
                 } else {
                     tooltipDesc.innerText = data.desc;
-                    tooltipBonus.textContent = data.bonus;
-                    tooltipCost.textContent = data.cost;
+                    tooltipBonus.innerHTML = data.bonus; // Use innerHTML for color
+                    tooltipCost.innerHTML = data.cost;   // Use innerHTML for color
                     tooltipBonus.style.display = 'block';
                     tooltipCost.style.display = 'block';
                     
-                    const expertise = playerStats[id === 'quantity' ? 'expertiseQuantity' : 'expertiseDamage'];
+                    const expertisePath = id === 'quantity' ? 'expertiseQuantity' : 'expertiseDamage';
+                    const expertise = playerStats[expertisePath];
                     if (expertise) {
                         tooltipExpertise.innerText = data.expertise[expertise];
                         tooltipExpertise.style.display = 'block';
@@ -1750,6 +2234,12 @@
             document.getElementById('start-commander').addEventListener('click', () => startGame('Commander'));
             document.getElementById('start-berserker').addEventListener('click', () => startGame('Berserker'));
             document.getElementById('start-swarm').addEventListener('click', () => startGame('Swarm'));
+            // v18 GAI: 新职业
+            document.getElementById('start-elementalist').addEventListener('click', () => startGame('Elementalist'));
+            document.getElementById('start-illusionist').addEventListener('click', () => startGame('Illusionist'));
+            // v20 GAI: 圣盾
+            document.getElementById('start-aegis').addEventListener('click', () => startGame('Aegis'));
+            
             restartButton.addEventListener('click', init); // 重新开始按钮
             
             // v15 GAI: 专精选择按钮
