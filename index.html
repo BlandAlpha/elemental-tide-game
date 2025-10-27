@@ -1,0 +1,1781 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>元素洪流 - Elemental Tide v16</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        body, html {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* 彻底禁止滚动 */
+            height: 100%;
+            width: 100%;
+            position: fixed; /* 适配移动端浏览器 */
+        }
+        canvas {
+            display: block;
+            background-color: #0a0a1a; /* 深色战场背景 */
+            width: 100%;
+            height: 100%;
+        }
+        /* 自定义按钮点击效果 */
+        .btn-upgrade, .btn-class, .btn-skill, .btn-expertise {
+            transition: all 0.1s ease;
+            -webkit-tap-highlight-color: transparent; /* 移除移动端点击高光 */
+        }
+        .btn-upgrade:active, .btn-class:active, .btn-skill:active, .btn-expertise:active {
+            transform: scale(0.95);
+            filter: brightness(0.9);
+        }
+        .btn-upgrade:disabled, .btn-skill:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            filter: grayscale(50%);
+        }
+
+        /* 基地渐变 */
+        #ai-ui-bar { position: relative; }
+        #ai-ui-bar::after {
+            content: ''; position: absolute; top: 100%; left: 0; width: 100%; height: 10px;
+            background: linear-gradient(to bottom, rgba(50, 150, 255, 0.5), transparent);
+            pointer-events: none;
+        }
+        #player-ui-bar { position: relative; }
+        #player-ui-bar::before {
+            content: ''; position: absolute; bottom: 100%; left: 0; width: 100%; height: 10px;
+            background: linear-gradient(to top, rgba(255, 50, 50, 0.5), transparent);
+            pointer-events: none;
+        }
+        
+        /* 提示框 (?) 按钮 */
+        .tooltip-trigger {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.25rem; /* 20px */
+            height: 1.25rem; /* 20px */
+            border-radius: 99px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-weight: bold;
+            font-size: 0.8rem;
+            cursor: help;
+            margin-left: 2px;
+            -webkit-user-select: none; /* Safari */
+            user-select: none;
+        }
+        
+        /* 提示框本体 */
+        #tooltip {
+            position: absolute;
+            display: none;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 0.75rem; /* 12px */
+            border-radius: 0.5rem; /* 8px */
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            max-width: 90%;
+            z-index: 100;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+        #tooltip h4 {
+            font-weight: bold;
+            color: #facc15; /* yellow-400 */
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+        #tooltip p {
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+        #tooltip em {
+            color: #6ee7b7; /* emerald-300 */
+            font-style: italic;
+        }
+        #tooltip .cost {
+            color: #f87171; /* red-400 */
+            font-style: italic;
+        }
+        /* v15 GAI: 专精提示 */
+        #tooltip-expertise {
+            font-size: 0.9rem;
+            color: #fde047; /* yellow-300 */
+            border-top: 1px solid #6b7280;
+            padding-top: 6px;
+            margin-top: 6px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white w-full h-screen flex items-center justify-center overflow-hidden">
+
+    <!-- 游戏容器，适配竖屏 -->
+    <div id="game-container" class="relative w-full h-full bg-black shadow-2xl overflow-hidden">
+        
+        <!-- Canvas 画布 -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- 游戏UI (竖屏布局) -->
+        <div class="absolute inset-0 w-full h-full flex flex-col justify-between z-10 pointer-events-none">
+            
+            <!-- v14 GAI: AI UI (顶部) -->
+            <div id="ai-ui-bar" class="bg-gray-800 bg-opacity-70 backdrop-blur-sm p-2 shadow-lg w-full pointer-events-auto transition-all duration-100">
+                <div class="flex justify-between items-center gap-2">
+                    <div>
+                        <h2 class="text-sm font-bold text-blue-400">寒冰之源 (AI)</h2>
+                        <div class="text-xs font-bold text-cyan-300">职业: <span id="ai-class">统帅</span></div>
+                        <div class="text-xs opacity-80">
+                            等级: <span id="ai-level" class="font-bold">1</span> 
+                            (数:<span id="ai-level-speed">1</span> 
+                            伤:<span id="ai-level-power">1</span> 
+                            战:<span id="ai-level-special">0</span>)
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end flex-1">
+                        <!-- AI 血量 -->
+                        <span id="ai-health-text" class="font-bold text-green-300 text-sm">100%</span>
+                        <div class="w-full max-w-xs h-3 bg-gray-600 rounded-full overflow-hidden">
+                            <div id="ai-health-bar" class="h-full bg-green-500 transition-all duration-100 ease-linear" style="width: 100%;"></div>
+                        </div>
+                        <!-- AI 护盾 UI -->
+                        <div id="ai-shield-ui" class="w-full max-w-xs h-3 bg-gray-600 rounded-full overflow-hidden mt-1 relative" style="display: none;">
+                            <div id="ai-shield-bar" class="h-full bg-blue-400 transition-all duration-100 ease-linear" style="width: 100%;"></div>
+                            <span id="ai-shield-timer" class="absolute inset-0 text-center text-xs text-white font-bold" style="text-shadow: 1px 1px 0 #000;">10.0s</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- v14 GAI: 玩家 UI (底部) -->
+            <div id="player-ui-bar" class="bg-gray-800 bg-opacity-70 backdrop-blur-sm p-2 shadow-lg w-full pointer-events-auto transition-all duration-100">
+                
+                <!-- 玩家 能量/血量/等级 -->
+                <div class="flex justify-between items-center gap-2 mb-2">
+                    <div>
+                        <h2 class="text-sm font-bold text-red-400">火焰之源 (玩家)</h2>
+                        <div class="text-xs font-bold text-red-300">职业: <span id="player-class">统帅</span></div>
+                        <div class="text-xs opacity-80">
+                            等级: <span id="player-total-level" class="font-bold">3</span> 
+                            (数:<span id="player-ui-level-speed">1</span> 
+                            伤:<span id="player-ui-level-power">1</span> 
+                            战:<span id="player-ui-level-special">0</span>)
+                        </div>
+                        <div class="text-lg">
+                            <span class="font-semibold">能量: </span>
+                            <span id="player-energy" class="font-bold text-yellow-300">100</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end flex-1">
+                        <!-- 玩家 血量 -->
+                        <span id="player-health-text" class="font-bold text-green-300 text-sm">100%</span>
+                        <div class="w-full max-w-xs h-3 bg-gray-600 rounded-full overflow-hidden">
+                            <div id="player-health-bar" class="h-full bg-green-500 transition-all duration-100 ease-linear" style="width: 100%;"></div>
+                        </div>
+                        <!-- 玩家 护盾 UI -->
+                        <div id="player-shield-ui" class="w-full max-w-xs h-3 bg-gray-600 rounded-full overflow-hidden mt-1 relative" style="display: none;">
+                            <div id="player-shield-bar" class="h-full bg-blue-400 transition-all duration-100 ease-linear" style="width: 100%;"></div>
+                            <span id="player-shield-timer" class="absolute inset-0 text-center text-xs text-white font-bold" style="text-shadow: 1px 1px 0 #000;">10.0s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- v14 GAI: 以太 & 主动技能 (UI 修复) -->
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="flex-1">
+                        <div class="flex justify-between items-center mb-0.5">
+                            <div class="text-sm font-bold text-purple-300">以太</div>
+                            <span id="aether-text" class="text-sm font-bold text-purple-300">0</span>
+                        </div>
+                        <div class="w-full h-3 bg-gray-600 rounded-full overflow-hidden">
+                            <div id="aether-bar" class="h-full bg-purple-500 transition-all duration-100 ease-linear" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    <button id="skill-button" class="btn-skill p-2 bg-purple-600 hover:bg-purple-700 rounded-lg shadow-md text-xs text-center" disabled>
+                        <div>释放技能</div>
+                        <div class="font-bold">消耗: <span id="aether-cost-text">100</span></div>
+                    </button>
+                    <!-- 技能提示按钮 -->
+                    <span class="tooltip-trigger" 
+                          data-tooltip-title="主动技能"
+                          data-tooltip-id="skill">?</span>
+                </div>
+
+                <!-- 玩家 升级按钮 -->
+                <div class="flex justify-around gap-1">
+                    <!-- 数量 -->
+                    <button id="upgrade-quantity" class="btn-upgrade flex-1 p-2 bg-red-600 hover:bg-red-700 rounded-lg shadow-md text-xs text-center">
+                        <div>数量 I (<span id="cost-quantity">50</span>)</div>
+                        <div class="font-bold">LV: <span id="level-quantity">1</span></div>
+                    </button>
+                    <span class="tooltip-trigger" 
+                          data-tooltip-title="升级：数量"
+                          data-tooltip-id="quantity">?</span>
+                    
+                    <!-- 伤害 -->
+                    <button id="upgrade-damage" class="btn-upgrade flex-1 p-2 bg-red-700 hover:bg-red-800 rounded-lg shadow-md text-xs text-center">
+                        <div>伤害 II (<span id="cost-damage">100</span>)</div>
+                        <div class="font-bold">LV: <span id="level-damage">1</span></div>
+                    </button>
+                    <span class="tooltip-trigger"
+                          data-tooltip-title="升级：伤害"
+                          data-tooltip-id="damage">?</span>
+                    
+                    <!-- 战术 -->
+                    <button id="upgrade-tactic" class="btn-upgrade flex-1 p-2 bg-red-800 hover:bg-red-900 rounded-lg shadow-md text-xs text-center">
+                        <div>战术 III (<span id="cost-tactic">150</span>)</div>
+                        <div class="font-bold">LV: <span id="level-tactic">0</span></div>
+                    </button>
+                    <span class="tooltip-trigger"
+                          data-tooltip-title="升级：战术"
+                          data-tooltip-id="tactic">?</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 弹窗 -->
+        <div id="modal" class="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+            <div class="bg-gray-800 p-6 rounded-lg shadow-2xl w-11/12 max-w-sm">
+                <h1 id="modal-title" class="text-2xl font-bold mb-4 text-center text-yellow-300">元素洪流</h1>
+                
+                <!-- 职业选择 (v16 GAI: 更新了描述) -->
+                <div id="class-selection" class="space-y-3">
+                    <h3 class="text-center font-bold text-lg">选择你的成长路线:</h3>
+                    <p class="text-center text-xs opacity-80">在路径达到 **LV.3 或 LV.4** 时，可解锁强大的**路径专精**！</p>
+                    
+                    <button id="start-commander" class="btn-class w-full p-3 bg-gray-600 hover:bg-gray-700 rounded-lg text-left">
+                        <div class="font-bold text-lg">统帅 (均衡)</div>
+                        <div class="text-sm opacity-90">
+                            技能: <span class="text-yellow-300">[战术护盾]</span> - 为基地提供护盾(10秒)。
+                            <br>战术: <span class="text-yellow-300">[守护巨兽]</span> - 死亡时分裂成3个老兵。
+                        </div>
+                    </button>
+                    
+                    <button id="start-berserker" class="btn-class w-full p-3 bg-red-700 hover:bg-red-800 rounded-lg text-left">
+                        <div class="font-bold text-lg">狂战士 (伤害)</div>
+                        <div class="text-sm opacity-90">
+                            (伤害升级 <span class="text-green-300">+30%</span>, 数量升级 <span class="text-red-300">-30%</span>)
+                            <br>技能: <span class="text-yellow-300">[过载]</span> - 临时获得双倍伤害。
+                            <br>战术: <span class="text-yellow-300">[自爆巨兽]</span> - 死亡时造成范围伤害。
+                        </div>
+                    </button>
+
+                    <button id="start-swarm" class="btn-class w-full p-3 bg-blue-700 hover:bg-blue-800 rounded-lg text-left">
+                        <div class="font-bold text-lg">虫群 (数量)</div>
+                        <div class="text-sm opacity-90">
+                            (数量升级 <span class="text-green-300">+30%</span>, 伤害升级 <span class="text-red-300">-30%</span>)
+                            <br>技能: <span class="text-yellow-300">[紧急增援]</span> - 立即产生一波单位。
+                            <br>战术: <span class="text-yellow-300">[孵化领主]</span> - 自动孵化免费的幼虫。
+                        </div>
+                    </button>
+                </div>
+                 
+                <!-- 游戏结果 -->
+                <p id="modal-message" class="text-base mb-4 text-center hidden"></p> 
+                <button id="restart-button" class="btn-class w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-xl font-bold rounded-lg shadow-lg transition duration-200 transform hover:scale-105 hidden mt-4">
+                    重新开始
+                </button>
+            </div>
+        </div>
+        
+        <!-- v15 GAI: 专精选择弹窗 -->
+        <div id="expertise-modal" class="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50" style="display: none;">
+            <div class="bg-gray-800 p-6 rounded-lg shadow-2xl w-11/12 max-w-sm">
+                <h1 id="expertise-title" class="text-2xl font-bold mb-4 text-center text-yellow-300">路径专精</h1>
+                <p class="text-center text-base mb-4">为你的路径选择一个永久专精！</p>
+                
+                <div class="space-y-3">
+                    <button id="expertise-choice-1" class="btn-expertise w-full p-3 bg-gray-600 hover:bg-gray-700 rounded-lg text-left">
+                        <div id="expertise-name-1" class="font-bold text-lg">专精 1</div>
+                        <div id="expertise-desc-1" class="text-sm opacity-90">描述 1</div>
+                    </button>
+                    
+                    <button id="expertise-choice-2" class="btn-expertise w-full p-3 bg-gray-600 hover:bg-gray-700 rounded-lg text-left">
+                        <div id="expertise-name-2" class="font-bold text-lg">专精 2</div>
+                        <div id="expertise-desc-2" class="text-sm opacity-90">描述 2</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- v12 GAI: 提示框 (Tooltip) -->
+        <div id="tooltip">
+            <h4 id="tooltip-title">Tooltip Title</h4>
+            <p id="tooltip-desc">Description goes here.</p>
+            <em id="tooltip-bonus">Bonus effect.</em>
+            <em id="tooltip-cost" class="cost">Cost effect.</em>
+            <!-- v15 GAI: 专精提示 -->
+            <div id="tooltip-expertise" style="display: none;"></div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // --- 游戏模态框和UI元素 ---
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modal-title');
+            const classSelectionDiv = document.getElementById('class-selection'); 
+            const modalMessage = document.getElementById('modal-message'); 
+            const restartButton = document.getElementById('restart-button'); 
+            
+            // v15 GAI: 专精弹窗
+            const expertiseModal = document.getElementById('expertise-modal');
+            const expertiseTitle = document.getElementById('expertise-title');
+            const expertiseName1 = document.getElementById('expertise-name-1');
+            const expertiseDesc1 = document.getElementById('expertise-desc-1');
+            const expertiseChoice1 = document.getElementById('expertise-choice-1');
+            const expertiseName2 = document.getElementById('expertise-name-2');
+            const expertiseDesc2 = document.getElementById('expertise-desc-2');
+            const expertiseChoice2 = document.getElementById('expertise-choice-2');
+            
+            const playerUIBar = document.getElementById('player-ui-bar');
+            const aiUIBar = document.getElementById('ai-ui-bar');
+
+            const energyEl = document.getElementById('player-energy');
+            const playerHealthBar = document.getElementById('player-health-bar');
+            const playerHealthText = document.getElementById('player-health-text');
+            const aiHealthBar = document.getElementById('ai-health-bar');
+            const aiHealthText = document.getElementById('ai-health-text');
+
+            // v13 GAI: Shield UI
+            const playerShieldUI = document.getElementById('player-shield-ui');
+            const playerShieldBar = document.getElementById('player-shield-bar');
+            const playerShieldTimer = document.getElementById('player-shield-timer');
+            const aiShieldUI = document.getElementById('ai-shield-ui');
+            const aiShieldBar = document.getElementById('ai-shield-bar');
+            const aiShieldTimer = document.getElementById('ai-shield-timer');
+
+            // v14 GAI: Aether UI
+            const aetherBar = document.getElementById('aether-bar');
+            const aetherText = document.getElementById('aether-text');
+            const skillButton = document.getElementById('skill-button');
+            const aetherCostTextEl = document.getElementById('aether-cost-text'); 
+
+            const playerTotalLevelEl = document.getElementById('player-total-level');
+            const playerUiLevelSpeedEl = document.getElementById('player-ui-level-speed');
+            const playerUiLevelPowerEl = document.getElementById('player-ui-level-power');
+            const playerUiLevelSpecialEl = document.getElementById('player-ui-level-special');
+
+            const playerClassEl = document.getElementById('player-class');
+            const aiClassEl = document.getElementById('ai-class');
+
+            // v12 GAI: 重命名
+            const costQuantityEl = document.getElementById('cost-quantity');
+            const costDamageEl = document.getElementById('cost-damage');
+            const costTacticEl = document.getElementById('cost-tactic');
+            const levelQuantityEl = document.getElementById('level-quantity'); 
+            const levelDamageEl = document.getElementById('level-damage'); 
+            const levelTacticEl = document.getElementById('level-tactic'); 
+
+            const aiLevelEl = document.getElementById('ai-level');
+            const aiLevelSpeedEl = document.getElementById('ai-level-speed');
+            const aiLevelPowerEl = document.getElementById('ai-level-power');
+            const aiLevelSpecialEl = document.getElementById('ai-level-special');
+            
+            // v12 GAI: Tooltip UI
+            const tooltip = document.getElementById('tooltip');
+            const tooltipTitle = document.getElementById('tooltip-title');
+            const tooltipDesc = document.getElementById('tooltip-desc');
+            const tooltipBonus = document.getElementById('tooltip-bonus');
+            const tooltipCost = document.getElementById('tooltip-cost');
+            const tooltipExpertise = document.getElementById('tooltip-expertise'); // v15 GAI
+
+            // --- 游戏核心参数 ---
+            let W, H; // 画布宽高
+            let gameLoopId;
+            let gameRunning = false;
+            
+            let playerBaseEdge = 0;
+            let aiBaseEdge = 0;
+
+            // 粒子池 (Object Pooling)
+            const MAX_PARTICLES = 3000;
+            const particlePool = [];
+            const activeParticles = [];
+            const activeHitEffects = [];
+
+            const BASE_HEALTH = 1000; // 基地初始血量
+
+            // v16 GAI: 经济重构
+            let lastTime = 0;
+            const ENERGY_RATE = 30; // v16 GAI: 30
+            const ENERGY_LEVEL_BONUS = 0.08; // v16 GAI: 0.08
+            const AETHER_COST_INCREASE = 25; 
+            const AETHER_BANK_CAP_MULTIPLIER = 1.5; 
+            
+            // v16 GAI: 专精触发等级
+            const EXPERTISE_TRIGGER_QTY = 4;
+            const EXPERTISE_TRIGGER_DMG = 4;
+            const EXPERTISE_TRIGGER_TAC = 3;
+
+            let screenShake = { intensity: 0, duration: 0 };
+            let playerHitAlpha = 0;
+
+            // 玩家属性
+            let playerStats = {};
+            // AI属性
+            let aiStats = {};
+            let aiDecisionTimer = 0;
+
+            const aiClassNames = { 'Commander': '统帅', 'Berserker': '狂战士', 'Swarm': '虫群' };
+            const playerClassNames = { 'Commander': '统帅', 'Berserker': '狂战士', 'Swarm': '虫群' };
+            
+            // v16 GAI: 专精数据
+            const expertiseData = {
+                quantity: {
+                    title: "专精：「数量」 (LV.4)", // v16 GAI: 4
+                    choices: {
+                        'Flood': { name: "「洪流」", desc: "你的“数量”升级成本永久降低 20%。" },
+                        'Vanguard': { name: "「先锋」", desc: "你的所有基础单位（非战术单位）获得 +20% 移动速度。" }
+                    }
+                },
+                damage: {
+                    title: "专精：「伤害」 (LV.4)", // v16 GAI: 4
+                    choices: {
+                        'Focus': { name: "「毁灭专注」", desc: "你的“伤害”升级效果额外+20%，但“数量”升级成本+10%。" },
+                        'Nurture': { name: "「巨兽培育」", desc: "你的“伤害”升级现在也会少量提升“战术单位”的出现几率。" }
+                    }
+                },
+                tactic: {
+                    title: "专精：「战术」 (LV.3)", // v16 GAI: 3
+                    choices: {
+                        'Legend': { name: "「传奇进化」", desc: "你的所有“战术单位”基础伤害和生命值额外+25%。" },
+                        'Synergy': { name: "「战术协同」", desc: "你的“战术”升级现在也会少量降低“主动技能”的以太消耗。" }
+                    }
+                }
+            };
+
+            // --- 粒子类 (V15 GAI: 专精效果) ---
+            class Particle {
+                constructor() { this.active = false; this.reset(); }
+                reset() {
+                    this.active = false; this.x = 0; this.y = 0; this.vx = 0; this.vy = 0;
+                    this.radius = 4; this.power = 1; this.isSpecial = false; 
+                    this.isEffect = false; this.life = 1;
+                    this.hue = 0; this.saturation = 0; this.lightness = 0;
+                    
+                    this.tacticType = 'Berserker'; // 'Commander', 'Berserker', 'Swarm'
+                    this.spawnTimer = 0; // For Swarm
+                    this.isOverloaded = false; // For Berserker Skill
+                    this.isLarva = false; // For Swarm tactic
+                    this.isVeteran = false; // v13 GAI: For Commander tactic
+                }
+
+                // v15 GAI: 增加了 stats 参数
+                init(x, y, isPlayer, power, isSpecial, tacticType, isLarva, isVeteran, stats) {
+                    this.active = true; this.x = x; this.y = y; this.isPlayer = isPlayer;
+                    this.power = power; this.isSpecial = isSpecial;
+                    this.tacticType = tacticType;
+                    this.isLarva = isLarva;
+                    this.isVeteran = isVeteran; 
+                    this.isOverloaded = false; 
+                    this.isEffect = false; this.life = 1;
+                    
+                    let baseSpeed = H * 0.0008 + Math.random() * 0.5;
+                    if (isLarva || isVeteran) baseSpeed *= 1.1; 
+                    
+                    // v15 GAI: 应用 「先锋」 专精
+                    if (!isSpecial && !isLarva && !isVeteran) {
+                        baseSpeed *= stats.basicSpeedMod;
+                    }
+                    
+                    this.vy = isPlayer ? -baseSpeed : baseSpeed;
+                    this.vx = (Math.random() - 0.5) * 0.8;
+                    
+                    this.hue = isPlayer ? Math.random() * 20 : 190 + Math.random() * 20;
+                    this.saturation = 100;
+                    
+                    if (isLarva) {
+                        // --- 幼虫 (Swarm) ---
+                        this.radius = 2;
+                        this.lightness = 40;
+                    } else if (isVeteran) {
+                        // --- 老兵 (Commander) ---
+                        this.radius = 6;
+                        this.lightness = 70; 
+                    } else if (isSpecial) {
+                        // --- 战术单位 ---
+                        const powerNormal = Math.min(this.power / (75.0 * stats.tacticPowerMod), 1.0); 
+                        this.radius = 9 + 7 * powerNormal; // 半径 9 -> 16
+                        this.vy *= 0.8;
+                        this.lightness = 60 + 30 * powerNormal; 
+                        if (tacticType === 'Swarm') {
+                            this.spawnTimer = 1.0 + Math.random() * 1.0; // 1-2秒后开始生产
+                        }
+                    } else {
+                        // --- 普通单位 ---
+                        const powerNormal = Math.min(this.power / 15.0, 1.0); 
+                        this.radius = 3 + 5 * powerNormal; // 半径 3 -> 8
+                        this.lightness = 50 + 30 * powerNormal; 
+                    }
+                }
+                
+                // ... (initSpark and draw methods remain unchanged from v14) ...
+                initSpark(x, y, hue, saturation, lightness, isExplosion = false) {
+                    this.active = true; this.x = x; this.y = y;
+                    const angle = Math.random() * Math.PI * 2;
+                    let speed = Math.random() * 5 + 2;
+                    if (isExplosion) speed *= 2.5; 
+                    
+                    this.vx = Math.cos(angle) * speed; 
+                    this.vy = Math.sin(angle) * speed;
+                    
+                    this.radius = Math.random() * 3 + 1;
+                    if (isExplosion) this.radius *= 2;
+                    
+                    this.isEffect = true;
+                    this.life = 1.0; 
+                    this.power = 0; this.isSpecial = false;
+                    this.hue = hue; this.saturation = saturation; this.lightness = lightness;
+                }
+                
+                draw() {
+                    if (!this.active) return;
+
+                    if (this.isEffect) {
+                        // 绘制火花
+                        ctx.fillStyle = `hsla(${this.hue}, ${this.saturation}%, ${this.lightness}%, ${this.life * 0.8})`;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else {
+                        // 绘制拖尾
+                        const speed = Math.abs(this.vy);
+                        const trailLength = speed * 2.5; // 拖尾长度
+                        ctx.strokeStyle = `hsla(${this.hue}, ${this.saturation}%, ${this.lightness}%, 0.1)`;
+                        ctx.lineWidth = this.radius * 2;
+                        ctx.beginPath();
+                        ctx.moveTo(this.x, this.y);
+                        ctx.lineTo(this.x - this.vx * trailLength, this.y - this.vy * trailLength);
+                        ctx.stroke();
+
+                        // V11 GAI: 基于力量的光晕 (shadowBlur)
+                        let powerNormal = 0;
+                        if (this.isLarva) powerNormal = 0.0;
+                        else if (this.isVeteran) powerNormal = 0.3; 
+                        else if (this.isSpecial) powerNormal = Math.min(this.power / 75.0, 1.0);
+                        else powerNormal = Math.min(this.power / 15.0, 1.0);
+
+                        let glow = 0;
+                        if (powerNormal > 0.1) {
+                            glow = 5 + 25 * powerNormal; // 光晕半径 5 -> 30
+                            ctx.shadowBlur = glow;
+                            ctx.shadowColor = `hsl(${this.hue}, ${this.saturation}%, ${this.lightness}%)`;
+                        }
+
+                        // V12 GAI: [过载] 特效 (更亮)
+                        if (this.isOverloaded) {
+                            ctx.shadowBlur = 40;
+                            ctx.shadowColor = `hsl(60, 100%, 80%)`;
+                        }
+
+                        // 绘制粒子本体
+                        ctx.fillStyle = `hsl(${this.hue}, ${this.saturation}%, ${this.lightness}%)`;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // 重置光晕
+                        if (glow > 0 || this.isOverloaded) {
+                            ctx.shadowBlur = 0;
+                        }
+
+                        // 战术单位的额外光晕
+                        if (this.isSpecial) {
+                            ctx.fillStyle = `hsla(${this.hue}, 100%, 70%, 0.15)`;
+                            ctx.beginPath();
+                            ctx.arc(this.x, this.y, this.radius * 2.5, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+                
+                update(delta) {
+                    if (!this.active) return;
+                    this.x += this.vx; this.y += this.vy;
+
+                    if (this.isEffect) {
+                        // 火花特效逻辑
+                        this.life -= 0.04; 
+                        this.radius *= 0.96;
+                        this.vx *= 0.95; 
+                        this.vy *= 0.95;
+                        if (this.life <= 0 || this.radius < 0.2) this.active = false;
+                    } else {
+                        // 战斗粒子逻辑
+                        if (this.x < this.radius || this.x > W - this.radius) {
+                            this.vx *= -0.8; this.x = Math.max(this.radius, Math.min(W - this.radius, this.x));
+                        }
+                        
+                        // 孵化领主 (Swarm) 逻辑
+                        if (this.isSpecial && this.tacticType === 'Swarm') {
+                            this.spawnTimer -= delta;
+                            if (this.spawnTimer <= 0) {
+                                spawnLarva(this.x, this.y, this.isPlayer);
+                                this.spawnTimer = 2.0; // 每2秒
+                            }
+                        }
+
+                        // v14 GAI: 护盾碰撞检测
+                        // 玩家粒子 (isPlayer) 撞击 AI 护盾
+                        if (this.isPlayer && aiStats.shieldTimer > 0) {
+                            const t = this.x / W;
+                            const shieldAlpha = Math.min(1.0, aiStats.shield / 50.0);
+                            const shieldY = aiBaseEdge + 60 * t * (1 - t) * shieldAlpha;
+                            
+                            if (this.y < shieldY) { // 撞到护盾
+                                this.active = false;
+                                triggerShieldHitEffect(false, this.power, this.x, shieldY);
+                                return; // 粒子消失，停止更新
+                            }
+                        }
+                        
+                        // AI 粒子 (!isPlayer) 撞击 玩家 护盾
+                        if (!this.isPlayer && playerStats.shieldTimer > 0) {
+                            const t = this.x / W;
+                            const shieldAlpha = Math.min(1.0, playerStats.shield / 50.0);
+                            const shieldY = playerBaseEdge - 60 * t * (1 - t) * shieldAlpha;
+
+                            if (this.y > shieldY) { // 撞到护盾
+                                this.active = false;
+                                triggerShieldHitEffect(true, this.power, this.x, shieldY);
+                                return; // 粒子消失，停止更新
+                            }
+                        }
+
+
+                        // 抵达基地 (v14 GAI: 只有在没撞到护盾时才可能发生)
+                        if (this.isPlayer && this.y < aiBaseEdge) {
+                            triggerBaseHitEffect(false, this.power, this.x);
+                            // 狂战士 [过载] 反噬
+                            if (this.isOverloaded) {
+                                triggerBaseHitEffect(true, this.power * 0.1, this.x, true); // 10% 反噬, true = silent
+                            }
+                            this.active = false;
+                            if (aiStats.health <= 0) gameOver(true);
+                        }
+                        if (!this.isPlayer && this.y > playerBaseEdge) {
+                            triggerBaseHitEffect(true, this.power, this.x);
+                            // AI 狂战士 [过载] 反噬
+                            if (this.isOverloaded) {
+                                triggerBaseHitEffect(false, this.power * 0.1, this.x, true); // 10% 反噬, true = silent
+                            }
+                            this.active = false;
+                            if (playerStats.health <= 0) gameOver(false);
+                        }
+                    }
+                }
+            }
+
+            // --- 对象池管理 ---
+            function initParticlePool() {
+                particlePool.length = 0;
+                for (let i = 0; i < MAX_PARTICLES; i++) {
+                    particlePool.push(new Particle());
+                }
+            }
+            function getParticleFromPool() {
+                for (let i = 0; i < particlePool.length; i++) {
+                    if (!particlePool[i].active) return particlePool[i];
+                }
+                return null;
+            }
+
+            // --- 游戏逻辑 ---
+            function resizeCanvas() {
+                W = canvas.width = window.innerWidth;
+                H = canvas.height = window.innerHeight;
+
+                aiBaseEdge = aiUIBar.offsetHeight;
+                playerBaseEdge = H - playerUIBar.offsetHeight;
+            }
+            
+            // v16 GAI: resetStats
+            function resetStats(isPlayer) {
+                return {
+                    energy: 100, health: BASE_HEALTH, 
+                    spawnRate: 0.2, power: 1, specialChance: 0,
+                    levelSpeed: 1, levelPower: 1, levelSpecial: 0,
+                    
+                    // v16 GAI: 经济重构
+                    costSpeed: 50, 
+                    costPower: 100, 
+                    costSpecial: 150, // Plan 1
+                    
+                    class: 'Commander',
+                    
+                    // v16 GAI: 专精乘数
+                    powerUpgradeMod: 1.0, 
+                    speedUpgradeMod: 1.0, 
+                    costSpeedMultiplier: 1.4, // Plan 2
+                    costPowerMultiplier: 1.6, // Plan 2
+                    costTacticMultiplier: 1.8, // Plan 1 & 2
+                    basicSpeedMod: 1.0, 
+                    tacticPowerMod: 1.0, 
+                    
+                    // v15 GAI: 专精状态
+                    expertiseQuantity: null,
+                    expertiseDamage: null,
+                    expertiseTactic: null,
+                    pendingExpertise: null,
+                    
+                    aether: 0,
+                    aetherCost: 100, 
+                    
+                    shield: 0,
+                    maxShield: 200,
+                    shieldTimer: 0, 
+                    
+                    skillActiveTimer: 0 // For Overload
+                };
+            }
+
+            function init() {
+                resizeCanvas();
+                initParticlePool();
+                gameRunning = false;
+                
+                playerStats = resetStats(true);
+                aiStats = resetStats(false);
+                
+                const aiClasses = ['Commander', 'Berserker', 'Swarm'];
+                const aiClass = aiClasses[Math.floor(Math.random() * aiClasses.length)];
+                aiStats.class = aiClass;
+                if (aiClass === 'Berserker') {
+                    aiStats.powerUpgradeMod = 1.3;
+                    aiStats.speedUpgradeMod = 0.7;
+                } else if (aiClass === 'Swarm') {
+                    aiStats.powerUpgradeMod = 0.7;
+                    aiStats.speedUpgradeMod = 1.3;
+                }
+                
+                aiDecisionTimer = 0;
+                for (const p of particlePool) p.reset();
+                activeParticles.length = 0;
+                activeHitEffects.length = 0;
+
+                screenShake = { intensity: 0, duration: 0 };
+                playerHitAlpha = 0;
+
+                updateUI();
+                modal.classList.remove('hidden');
+                expertiseModal.style.display = 'none'; // v15 GAI
+                modalTitle.textContent = "元素洪流";
+                classSelectionDiv.classList.remove('hidden'); 
+                modalMessage.classList.add('hidden'); 
+                restartButton.classList.add('hidden');
+            }
+
+            function startGame(playerClass) {
+                playerStats.class = playerClass;
+                if (playerClass === 'Berserker') {
+                    playerStats.powerUpgradeMod = 1.3;
+                    playerStats.speedUpgradeMod = 0.7;
+                } else if (playerClass === 'Swarm') {
+                    playerStats.powerUpgradeMod = 0.7;
+                    playerStats.speedUpgradeMod = 1.3;
+                }
+                
+                aetherCostTextEl.textContent = playerStats.aetherCost;
+                
+                gameRunning = true;
+                lastTime = performance.now();
+                modal.classList.add('hidden');
+                expertiseModal.style.display = 'none'; // v15 GAI
+                if (gameLoopId) cancelAnimationFrame(gameLoopId);
+                gameLoop(lastTime);
+            }
+
+            function gameOver(playerWon) {
+                if (!gameRunning) return;
+                gameRunning = false;
+                if (gameLoopId) cancelAnimationFrame(gameLoopId);
+                
+                modal.classList.remove('hidden');
+                expertiseModal.style.display = 'none'; // v15 GAI
+                modalTitle.textContent = playerWon ? "胜利！" : "失败";
+                classSelectionDiv.classList.add('hidden'); 
+                modalMessage.classList.remove('hidden'); 
+                restartButton.classList.remove('hidden');
+                modalMessage.textContent = playerWon ? "你摧毁了对方的元素之源！" : "你的元素之源被摧毁了。";
+                modalTitle.className = playerWon ? "text-2xl font-bold mb-3 text-center text-green-400" : "text-2xl font-bold mb-3 text-center text-red-400";
+            }
+            
+            // v14 GAI: 更新玩家UI (修复Aether显示)
+            function updateUI() {
+                energyEl.textContent = Math.floor(playerStats.energy);
+                
+                const playerHealthPercent = Math.max(0, playerStats.health / BASE_HEALTH) * 100;
+                playerHealthBar.style.width = `${playerHealthPercent}%`;
+                playerHealthBar.style.backgroundColor = playerHealthPercent > 50 ? '#22c55e' : (playerHealthPercent > 20 ? '#fbbf24' : '#ef4444');
+                playerHealthText.textContent = `${Math.floor(playerHealthPercent)}%`;
+
+                const aiHealthPercent = Math.max(0, aiStats.health / BASE_HEALTH) * 100;
+                aiHealthBar.style.width = `${aiHealthPercent}%`;
+                aiHealthBar.style.backgroundColor = aiHealthPercent > 50 ? '#22c55e' : (aiHealthPercent > 20 ? '#fbbf24' : '#ef4444');
+                aiHealthText.textContent = `${Math.floor(aiHealthPercent)}%`;
+
+                // v13 GAI: 护盾 UI 更新
+                if (playerStats.shieldTimer > 0 && playerStats.shield > 0) {
+                    playerShieldUI.style.display = 'block';
+                    const shieldPercent = (playerStats.shield / playerStats.maxShield) * 100;
+                    playerShieldBar.style.width = `${shieldPercent}%`;
+                    playerShieldTimer.textContent = `${playerStats.shieldTimer.toFixed(1)}s`;
+                } else {
+                    playerShieldUI.style.display = 'none';
+                }
+                if (aiStats.shieldTimer > 0 && aiStats.shield > 0) {
+                    aiShieldUI.style.display = 'block';
+                    const shieldPercent = (aiStats.shield / aiStats.maxShield) * 100;
+                    aiShieldBar.style.width = `${shieldPercent}%`;
+                    aiShieldTimer.textContent = `${aiStats.shieldTimer.toFixed(1)}s`;
+                } else {
+                    aiShieldUI.style.display = 'none';
+                }
+
+
+                // v14 GAI: Aether UI 更新 (修复“银行”显示)
+                const aetherPercent = Math.min(100, (playerStats.aether / playerStats.aetherCost) * 100);
+                aetherBar.style.width = `${aetherPercent}%`;
+                aetherText.textContent = `${Math.floor(playerStats.aether)}`; // 只显示当前拥有的
+                
+                skillButton.disabled = playerStats.aether < playerStats.aetherCost || playerStats.skillActiveTimer > 0;
+                
+                if (playerStats.skillActiveTimer > 0) {
+                    skillButton.firstElementChild.textContent = `过载中...`;
+                    skillButton.lastElementChild.innerHTML = `(${playerStats.skillActiveTimer.toFixed(1)}s)`;
+                } else {
+                    skillButton.firstElementChild.textContent = "释放技能";
+                    skillButton.lastElementChild.innerHTML = `消耗: <span id="aether-cost-text">${playerStats.aetherCost}</span>`;
+                }
+
+
+                const totalPlayerLevel = playerStats.levelSpeed + playerStats.levelPower + playerStats.levelSpecial;
+                playerTotalLevelEl.textContent = totalPlayerLevel;
+                playerUiLevelSpeedEl.textContent = playerStats.levelSpeed;
+                playerUiLevelPowerEl.textContent = playerStats.levelPower;
+                playerUiLevelSpecialEl.textContent = playerStats.levelSpecial;
+
+                costQuantityEl.textContent = playerStats.costSpeed;
+                costDamageEl.textContent = playerStats.costPower;
+                costTacticEl.textContent = playerStats.costSpecial;
+                levelQuantityEl.textContent = playerStats.levelSpeed;
+                levelDamageEl.textContent = playerStats.levelPower;
+                levelTacticEl.textContent = playerStats.levelSpecial;
+
+                playerClassEl.textContent = playerClassNames[playerStats.class] || '统帅';
+                aiClassEl.textContent = aiClassNames[aiStats.class] || '统帅';
+
+                // AI UI
+                aiLevelEl.textContent = aiStats.levelSpeed + aiStats.levelPower + aiStats.levelSpecial;
+                aiLevelSpeedEl.textContent = aiStats.levelSpeed;
+                aiLevelPowerEl.textContent = aiStats.levelPower;
+                aiLevelSpecialEl.textContent = aiStats.levelSpecial;
+
+                // 按钮禁用状态
+                document.getElementById('upgrade-quantity').disabled = playerStats.energy < playerStats.costSpeed;
+                document.getElementById('upgrade-damage').disabled = playerStats.energy < playerStats.costPower;
+                document.getElementById('upgrade-tactic').disabled = playerStats.energy < playerStats.costSpecial;
+            }
+            
+            // v16 GAI: 玩家升级 (调整触发等级)
+            function playerUpgrade(type) {
+                if (!gameRunning) return;
+                
+                let checkExpertise = false;
+                
+                switch (type) {
+                    case 'quantity': 
+                        if (playerStats.energy >= playerStats.costSpeed) {
+                            playerStats.energy -= playerStats.costSpeed;
+                            playerStats.spawnRate += 0.1 * playerStats.speedUpgradeMod; 
+                            playerStats.levelSpeed++;
+                            playerStats.costSpeed = Math.floor(playerStats.costSpeed * playerStats.costSpeedMultiplier);
+                            if (playerStats.levelSpeed === EXPERTISE_TRIGGER_QTY && !playerStats.expertiseQuantity) {
+                                checkExpertise = true;
+                                playerStats.pendingExpertise = 'quantity';
+                            }
+                        }
+                        break;
+                    case 'damage': 
+                         if (playerStats.energy >= playerStats.costPower) {
+                            playerStats.energy -= playerStats.costPower;
+                            let damageGain = 0.8 * playerStats.powerUpgradeMod;
+                            // v15 GAI: 「毁灭专注」 效果
+                            if (playerStats.expertiseDamage === 'Focus') damageGain *= 1.2;
+                            playerStats.power += damageGain; 
+                            
+                            // v15 GAI: 「巨兽培育」 效果
+                            if (playerStats.expertiseDamage === 'Nurture') {
+                                playerStats.specialChance = Math.min(0.5, playerStats.specialChance + 0.005);
+                            }
+                            
+                            playerStats.levelPower++;
+                            playerStats.costPower = Math.floor(playerStats.costPower * playerStats.costPowerMultiplier);
+                            if (playerStats.levelPower === EXPERTISE_TRIGGER_DMG && !playerStats.expertiseDamage) {
+                                checkExpertise = true;
+                                playerStats.pendingExpertise = 'damage';
+                            }
+                        }
+                        break;
+                    case 'tactic': 
+                         if (playerStats.energy >= playerStats.costSpecial) {
+                            playerStats.energy -= playerStats.costSpecial;
+                            playerStats.specialChance = Math.min(0.5, playerStats.specialChance + 0.03);
+                            
+                            // v15 GAI: 「战术协同」 效果
+                            if (playerStats.expertiseTactic === 'Synergy') {
+                                playerStats.aetherCost = Math.max(100, playerStats.aetherCost - 10);
+                            }
+                            
+                            playerStats.levelSpecial++;
+                            playerStats.costSpecial = Math.floor(playerStats.costSpecial * playerStats.costTacticMultiplier);
+                            if (playerStats.levelSpecial === EXPERTISE_TRIGGER_TAC && !playerStats.expertiseTactic) {
+                                checkExpertise = true;
+                                playerStats.pendingExpertise = 'tactic';
+                            }
+                        }
+                        break;
+                }
+                
+                if (checkExpertise) {
+                    triggerExpertiseChoice(playerStats.pendingExpertise);
+                }
+                
+                updateUI();
+            }
+            
+            // v15 GAI: 触发专精选择
+            function triggerExpertiseChoice(path) {
+                gameRunning = false; // 暂停游戏
+                const data = expertiseData[path];
+                expertiseTitle.textContent = data.title;
+                
+                const choices = Object.keys(data.choices);
+                expertiseName1.textContent = data.choices[choices[0]].name;
+                expertiseDesc1.textContent = data.choices[choices[0]].desc;
+                expertiseChoice1.dataset.choice = choices[0]; // 'Flood'
+                
+                expertiseName2.textContent = data.choices[choices[1]].name;
+                expertiseDesc2.textContent = data.choices[choices[1]].desc;
+                expertiseChoice2.dataset.choice = choices[1]; // 'Vanguard'
+                
+                expertiseModal.style.display = 'flex';
+            }
+            
+            // v15 GAI: 玩家选择专精
+            function selectExpertise(choice) {
+                const path = playerStats.pendingExpertise;
+                
+                if (path === 'quantity') {
+                    playerStats.expertiseQuantity = choice;
+                    if (choice === 'Flood') {
+                        playerStats.costSpeedMultiplier *= 0.8;
+                    } else if (choice === 'Vanguard') {
+                        playerStats.basicSpeedMod = 1.2;
+                    }
+                } 
+                else if (path === 'damage') {
+                    playerStats.expertiseDamage = choice;
+                    if (choice === 'Focus') {
+                        playerStats.powerUpgradeMod *= 1.2;
+                        playerStats.costSpeedMultiplier *= 1.1; // 惩罚
+                    }
+                    // 'Nurture' 的效果在 playerUpgrade('damage') 中应用
+                }
+                else if (path === 'tactic') {
+                    playerStats.expertiseTactic = choice;
+                    if (choice === 'Legend') {
+                        playerStats.tacticPowerMod = 1.25;
+                    }
+                    // 'Synergy' 的效果在 playerUpgrade('tactic') 中应用
+                }
+                
+                playerStats.pendingExpertise = null;
+                expertiseModal.style.display = 'none';
+                gameRunning = true;
+                lastTime = performance.now();
+                if (gameLoopId) cancelAnimationFrame(gameLoopId);
+                gameLoop(lastTime);
+            }
+
+
+            // v16 GAI: AI 升级 (修复了硬编码, 调整了触发等级)
+            function aiUpgrade(type) {
+                 let checkExpertise = false;
+                 
+                 switch (type) {
+                    case 'quantity':
+                        aiStats.energy -= aiStats.costSpeed; 
+                        aiStats.spawnRate += 0.1 * aiStats.speedUpgradeMod; 
+                        aiStats.levelSpeed++; 
+                        aiStats.costSpeed = Math.floor(aiStats.costSpeed * aiStats.costSpeedMultiplier); // v16 Bugfix
+                        if (aiStats.levelSpeed === EXPERTISE_TRIGGER_QTY && !aiStats.expertiseQuantity) { // v16 GAI
+                            checkExpertise = true; aiStats.pendingExpertise = 'quantity';
+                        }
+                        break;
+                    case 'damage':
+                        aiStats.energy -= aiStats.costPower; 
+                        let damageGain = 0.8 * aiStats.powerUpgradeMod;
+                        if (aiStats.expertiseDamage === 'Focus') damageGain *= 1.2;
+                        aiStats.power += damageGain; 
+                        
+                        if (aiStats.expertiseDamage === 'Nurture') {
+                            aiStats.specialChance = Math.min(0.5, aiStats.specialChance + 0.005);
+                        }
+                        
+                        aiStats.levelPower++; 
+                        aiStats.costPower = Math.floor(aiStats.costPower * aiStats.costPowerMultiplier); // v16 Bugfix
+                        if (aiStats.levelPower === EXPERTISE_TRIGGER_DMG && !aiStats.expertiseDamage) { // v16 GAI
+                            checkExpertise = true; aiStats.pendingExpertise = 'damage';
+                        }
+                        break;
+                    case 'tactic':
+                        aiStats.energy -= aiStats.costSpecial; 
+                        aiStats.specialChance = Math.min(0.5, aiStats.specialChance + 0.03);
+                        
+                        if (aiStats.expertiseTactic === 'Synergy') {
+                            aiStats.aetherCost = Math.max(100, aiStats.aetherCost - 10);
+                        }
+                        
+                        aiStats.levelSpecial++; 
+                        aiStats.costSpecial = Math.floor(aiStats.costSpecial * aiStats.costTacticMultiplier); // v16 Bugfix
+                        if (aiStats.levelSpecial === EXPERTISE_TRIGGER_TAC && !aiStats.expertiseTactic) { // v16 GAI
+                            checkExpertise = true; aiStats.pendingExpertise = 'tactic';
+                        }
+                        break;
+                }
+                
+                if (checkExpertise) {
+                    aiSelectExpertise(aiStats.pendingExpertise);
+                }
+            }
+            
+            // v15 GAI: AI 选择专精
+            function aiSelectExpertise(path) {
+                let choice;
+                const choices = Object.keys(expertiseData[path].choices);
+                
+                // AI 智能选择
+                if (path === 'quantity') {
+                    choice = (aiStats.class === 'Swarm') ? 'Flood' : choices[Math.floor(Math.random() * choices.length)];
+                } else if (path === 'damage') {
+                    choice = (aiStats.class === 'Berserker') ? 'Focus' : choices[Math.floor(Math.random() * choices.length)];
+                } else if (path === 'tactic') {
+                    choice = (aiStats.class === 'Commander') ? 'Legend' : choices[Math.floor(Math.random() * choices.length)];
+                } else {
+                    choice = choices[Math.floor(Math.random() * choices.length)];
+                }
+
+                // 应用 AI 专精
+                if (path === 'quantity') {
+                    aiStats.expertiseQuantity = choice;
+                    if (choice === 'Flood') {
+                        aiStats.costSpeedMultiplier *= 0.8;
+                    } else if (choice === 'Vanguard') {
+                        aiStats.basicSpeedMod = 1.2;
+                    }
+                } 
+                else if (path === 'damage') {
+                    aiStats.expertiseDamage = choice;
+                    if (choice === 'Focus') {
+                        aiStats.powerUpgradeMod *= 1.2;
+                        aiStats.costSpeedMultiplier *= 1.1; 
+                    }
+                }
+                else if (path === 'tactic') {
+                    aiStats.expertiseTactic = choice;
+                    if (choice === 'Legend') {
+                        aiStats.tacticPowerMod = 1.25;
+                    }
+                }
+                
+                aiStats.pendingExpertise = null;
+            }
+            
+            // v13 GAI: 玩家释放技能 (动态消耗)
+            function playerActivateSkill() {
+                if (!gameRunning || playerStats.aether < playerStats.aetherCost || playerStats.skillActiveTimer > 0) return;
+                
+                playerStats.aether -= playerStats.aetherCost; // 扣除消耗
+                playerStats.aetherCost += AETHER_COST_INCREASE; // v13 GAI: 增加下一次消耗
+                
+                switch(playerStats.class) {
+                    case 'Commander':
+                        playerStats.shield = playerStats.maxShield; // 补满
+                        playerStats.shieldTimer = 10.0; // v13 GAI: 刷新时间
+                        break;
+                    case 'Berserker':
+                        playerStats.skillActiveTimer = 5.0; // 5秒
+                        break;
+                    case 'Swarm':
+                        spawnSwarm(true);
+                        break;
+                }
+                updateUI();
+            }
+            
+            // v13 GAI: AI 释放技能 (动态消耗)
+            function aiActivateSkill() {
+                if (!gameRunning || aiStats.aether < aiStats.aetherCost || aiStats.skillActiveTimer > 0) return;
+                
+                aiStats.aether -= aiStats.aetherCost;
+                aiStats.aetherCost += AETHER_COST_INCREASE;
+                
+                switch(aiStats.class) {
+                    case 'Commander':
+                        aiStats.shield = aiStats.maxShield;
+                        aiStats.shieldTimer = 10.0;
+                        break;
+                    case 'Berserker':
+                        aiStats.skillActiveTimer = 5.0; // 5秒
+                        break;
+                    case 'Swarm':
+                        spawnSwarm(false);
+                        break;
+                }
+            }
+
+            // AI 逻辑
+            function updateAI(delta) {
+                const totalAILevel = aiStats.levelSpeed + aiStats.levelPower + aiStats.levelSpecial;
+                aiStats.energy += ENERGY_RATE * (0.9 + totalAILevel * ENERGY_LEVEL_BONUS) * delta; // v16 GAI
+                aiDecisionTimer -= delta * 1000;
+                
+                // v13 GAI: AI 技能决策 (检查动态消耗)
+                if (aiStats.aether >= aiStats.aetherCost) {
+                    if (aiStats.class === 'Commander' && aiStats.health < BASE_HEALTH * 0.6) {
+                        aiActivateSkill();
+                    } else if (aiStats.class === 'Swarm' && playerStats.health < BASE_HEALTH * 0.5) {
+                         aiActivateSkill(); // 斩杀
+                    } else if (aiStats.class === 'Berserker' && aiStats.health < BASE_HEALTH * 0.7) {
+                         aiActivateSkill(); // 拼命
+                    } else if (Math.random() < 0.3) {
+                         aiActivateSkill(); // 随机使用
+                    }
+                }
+
+                // AI 升级决策
+                if (aiDecisionTimer <= 0) {
+                    aiDecisionTimer = Math.random() * 1000 + 500;
+                    
+                    const prefersPower = aiStats.class === 'Berserker';
+                    const prefersSpeed = aiStats.class === 'Swarm';
+                    
+                    if (aiStats.health < BASE_HEALTH * 0.4 && aiStats.energy >= aiStats.costPower) {
+                        aiUpgrade('damage'); 
+                    } 
+                    else if (prefersPower && aiStats.energy >= aiStats.costPower) {
+                        aiUpgrade('damage');
+                    }
+                    else if (prefersSpeed && aiStats.energy >= aiStats.costSpeed) {
+                        aiUpgrade('quantity');
+                    }
+                    else if (aiStats.energy >= aiStats.costSpeed && aiStats.levelSpeed <= aiStats.levelPower + 1) {
+                        aiUpgrade('quantity');
+                    }
+                    else if (aiStats.energy >= aiStats.costPower) {
+                        aiUpgrade('damage');
+                    }
+                    else if (aiStats.energy >= aiStats.costSpecial && aiStats.levelSpecial < 5) {
+                        aiUpgrade('tactic');
+                    }
+                    else if (aiStats.energy >= aiStats.costSpeed) {
+                        aiUpgrade('quantity');
+                    }
+                }
+            }
+            
+            // v12 GAI: 产生一群单位 (虫群技能)
+            function spawnSwarm(isPlayer) {
+                const stats = isPlayer ? playerStats : aiStats;
+                for (let i = 0; i < 20; i++) {
+                    const p = getParticleFromPool();
+                    if (p) {
+                        const x = Math.random() * W;
+                        const y = isPlayer ? (playerBaseEdge - 5 + (Math.random() * 5)) : (aiBaseEdge + 5 - (Math.random() * 5));
+                        // 虫群技能产生的单位是基础单位
+                        p.init(x, y, isPlayer, stats.power, false, 'Berserker', false, false, stats);
+                        activeParticles.push(p);
+                    }
+                }
+            }
+            
+            // v12 GAI: 产生幼虫 (虫群战术)
+            function spawnLarva(x, y, isPlayer) {
+                const stats = isPlayer ? playerStats : aiStats;
+                const p = getParticleFromPool();
+                if (p) {
+                    // v15 GAI: 幼虫不受战术加成
+                    p.init(x, y, isPlayer, stats.power * 0.2, false, 'Berserker', true, false, stats); // 20% 伤害
+                    activeParticles.push(p);
+                }
+            }
+            
+            // v13 GAI: 产生老兵 (统帅战术)
+            function spawnVeterans(x, y, isPlayer, count = 3) {
+                const stats = isPlayer ? playerStats : aiStats;
+                for (let i = 0; i < count; i++) {
+                    const p = getParticleFromPool();
+                    if (p) {
+                        // v15 GAI: 老兵受战术加成
+                        const power = stats.power * 2 * stats.tacticPowerMod;
+                        p.init(x + Math.random()*20-10, y + Math.random()*20-10, isPlayer, power, false, 'Berserker', false, true, stats); 
+                        activeParticles.push(p);
+                    }
+                }
+            }
+
+            // v15 GAI: 产生粒子
+            let playerSpawnAccumulator = 0;
+            let aiSpawnAccumulator = 0;
+            function spawnParticles(delta) {
+                playerSpawnAccumulator += playerStats.spawnRate * delta * (10 + playerStats.levelSpeed);
+                aiSpawnAccumulator += aiStats.spawnRate * delta * (10 + aiStats.levelSpeed);
+
+                while (playerSpawnAccumulator >= 1) {
+                    const p = getParticleFromPool();
+                    if (p) {
+                        const x = Math.random() * W;
+                        const y = playerBaseEdge - 5 + (Math.random() * 5); 
+                        const isSpecial = Math.random() < playerStats.specialChance;
+                        
+                        let basePower = playerStats.power;
+                        if (playerStats.skillActiveTimer > 0) basePower *= 2; // [过载]
+                        
+                        // v15 GAI: 「传奇进化」 效果
+                        const power = isSpecial ? (basePower * 5 * playerStats.tacticPowerMod) : basePower;
+                        const tactic = isSpecial ? playerStats.class : 'Berserker';
+                        
+                        p.init(x, y, true, power, isSpecial, tactic, false, false, playerStats);
+                        if (playerStats.skillActiveTimer > 0) p.isOverloaded = true;
+                        
+                        activeParticles.push(p);
+                    }
+                    playerSpawnAccumulator -= 1;
+                }
+                
+                while (aiSpawnAccumulator >= 1) {
+                    const p = getParticleFromPool();
+                    if (p) {
+                        const x = Math.random() * W;
+                        const y = aiBaseEdge + 5 - (Math.random() * 5);
+                        const isSpecial = Math.random() < aiStats.specialChance;
+
+                        let basePower = aiStats.power;
+                        if (aiStats.skillActiveTimer > 0) basePower *= 2; // AI [过载]
+                        
+                        // v15 GAI: 「传奇进化」 效果
+                        const power = isSpecial ? (basePower * 5 * aiStats.tacticPowerMod) : basePower;
+                        const tactic = isSpecial ? aiStats.class : 'Berserker';
+
+                        p.init(x, y, false, power, isSpecial, tactic, false, false, aiStats);
+                        if (aiStats.skillActiveTimer > 0) p.isOverloaded = true;
+
+                        activeParticles.push(p);
+                    }
+                    aiSpawnAccumulator -= 1;
+                }
+            }
+
+            // 产生碰撞火花
+            function spawnSpark(x, y, hue, saturation, lightness, count = 3, isExplosion = false) {
+                for (let i = 0; i < count; i++) {
+                    const p = getParticleFromPool();
+                    if (p) {
+                        p.initSpark(x + Math.random()*4-2, y + Math.random()*4-2, hue, saturation, lightness, isExplosion);
+                        activeParticles.push(p);
+                    }
+                }
+            }
+            
+            // v14 GAI: 新增 - 护盾受击
+            function triggerShieldHitEffect(isPlayerBase, damage, x_coord, y_coord) {
+                const stats = isPlayerBase ? playerStats : aiStats;
+                
+                stats.shield -= damage;
+                
+                if (stats.shield <= 0) {
+                    stats.shieldTimer = 0; // 护盾被击破
+                    stats.shield = 0;
+                }
+                
+                // 产生蓝白色格挡火花
+                spawnSpark(x_coord, y_coord, 200, 50, 100, 5, false); 
+                
+                // v14 GAI: 攻击护盾给少量以太
+                const attackerStats = isPlayerBase ? aiStats : playerStats;
+                const attackerCost = isPlayerBase ? aiStats.aetherCost : playerStats.aetherCost;
+                attackerStats.aether = Math.min(attackerCost * AETHER_BANK_CAP_MULTIPLIER, attackerStats.aether + damage * 0.05); // 0.05 (护盾) vs 0.15 (基地)
+            }
+
+
+            // v13 GAI: 基地受击特效 (护盾逻辑)
+            function triggerBaseHitEffect(isPlayerBase, damage, x_coord, isSilent = false) {
+                const stats = isPlayerBase ? playerStats : aiStats;
+                let damageToHealth = damage;
+                
+                // v13 GAI: 护盾逻辑 (v14中这个不应该被触发, 除非护盾刚好消失)
+                if (stats.shieldTimer > 0 && stats.shield > 0) {
+                    const damageToShield = Math.min(stats.shield, damage);
+                    damageToHealth = damage - damageToShield;
+                    stats.shield -= damageToShield;
+                }
+                
+                if (damageToHealth > 0) {
+                    stats.health -= damageToHealth;
+                }
+                
+                // 无声打击 (例如过载反噬) 不触发特效
+                if (isSilent) {
+                     if (isPlayerBase && damageToHealth > 0) playerHitAlpha = Math.min(1.0, playerHitAlpha + 0.2); // 轻微提示
+                     return;
+                }
+
+                const intensity = Math.min(damage / 40.0, 1.0); // 0.0 to 1.0
+                activeHitEffects.push({
+                    x: x_coord,
+                    isPlayer: isPlayerBase,
+                    life: 1.0,
+                    intensity: intensity
+                });
+                
+                const sparkCount = Math.min(Math.floor(damage * 1.5), 15);
+                const y = isPlayerBase ? playerBaseEdge : aiBaseEdge;
+                spawnSpark(x_coord, y, 0, 0, 100, sparkCount);
+
+                if (isPlayerBase) {
+                    // 玩家被击中
+                    playerHitAlpha = Math.min(1.0, playerHitAlpha + intensity * 0.5);
+                } else {
+                    // 玩家击中AI
+                    const shakeIntensity = Math.min(damageToHealth, 10); // 只有对血量造成伤害才震动
+                    if (shakeIntensity > 0) {
+                        screenShake.intensity = Math.max(screenShake.intensity, shakeIntensity);
+                        screenShake.duration = 0.2; // 持续0.2秒
+                    }
+                    // v14 GAI: 击中AI基地增加以太 (收益降低, 银行上限)
+                    playerStats.aether = Math.min(playerStats.aetherCost * AETHER_BANK_CAP_MULTIPLIER, playerStats.aether + damage * 0.15);
+                }
+            }
+            
+            // v12 GAI: 自爆巨兽 (Berserker) 爆炸
+            function triggerExplosion(x, y, isPlayer, damage) {
+                // 视觉特效
+                spawnSpark(x, y, 0, 100, 70, 20, true); // 20个猛烈火花
+                
+                // 范围伤害
+                const explosionRadius = 70; 
+                for (const p of activeParticles) {
+                    if (!p.active || p.isEffect || p.isPlayer === isPlayer) continue;
+                    
+                    const dx = p.x - x;
+                    const dy = p.y - y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (dist < explosionRadius) {
+                        p.power -= damage; // 造成伤害
+                        if (p.power <= 0) {
+                            p.active = false;
+                            spawnSpark(p.x, p.y, p.hue, p.saturation, p.lightness, 3);
+                            // v14 GAI: 爆炸击杀也给以太
+                            const killerStats = isPlayer ? playerStats : aiStats;
+                            const killerCost = isPlayer ? playerStats.aetherCost : aiStats.aetherCost;
+                            killerStats.aether = Math.min(killerCost * AETHER_BANK_CAP_MULTIPLIER, killerStats.aether + 0.5);
+                        }
+                    }
+                }
+            }
+
+            // 碰撞检测 (网格检测)
+            const grid = new Map();
+            const CELL_SIZE = 25;
+
+            function updateCollisions() {
+                grid.clear();
+                for (const p of activeParticles) {
+                    if (p.isEffect || !p.active) continue; 
+                    const key = `${Math.floor(p.x / CELL_SIZE)}_${Math.floor(p.y / CELL_SIZE)}`;
+                    if (!grid.has(key)) grid.set(key, []);
+                    grid.get(key).push(p);
+                }
+
+                for (const p1 of activeParticles) {
+                    if (p1.isEffect || !p1.active) continue;
+                    const cx = Math.floor(p1.x / CELL_SIZE);
+                    const cy = Math.floor(p1.y / CELL_SIZE);
+
+                    for (let x = -1; x <= 1; x++) {
+                        for (let y = -1; y <= 1; y++) {
+                            const key = `${cx + x}_${cy + y}`;
+                            if (grid.has(key)) {
+                                for (const p2 of grid.get(key)) {
+                                    if (p1 === p2 || !p2.active || p1.isPlayer === p2.isPlayer) continue;
+                                    const dx = p1.x - p2.x; const dy = p1.y - p2.y;
+                                    const dist = Math.sqrt(dx * dx + dy * dy);
+                                    const collideDist = p1.radius + p2.radius;
+                                    if (dist < collideDist * 0.8) {
+                                        handleCollision(p1, p2);
+                                        if (!p1.active) break;
+                                    }
+                                }
+                            }
+                            if (!p1.active) break;
+                        }
+                        if (!p1.active) break;
+                    }
+                }
+            }
+            
+            // 碰撞处理
+            function handleCollision(p1, p2) {
+                if (!p1.active || !p2.active || p1.isPlayer === p2.isPlayer) return;
+                
+                // v14 GAI: 碰撞增加双方以太 (银行上限)
+                playerStats.aether = Math.min(playerStats.aetherCost * AETHER_BANK_CAP_MULTIPLIER, playerStats.aether + 0.3);
+                aiStats.aether = Math.min(aiStats.aetherCost * AETHER_BANK_CAP_MULTIPLIER, aiStats.aether + 0.3);
+                
+                const midX = (p1.x + p2.x) / 2;
+                const midY = (p1.y + p2.y) / 2;
+                
+                if (p1.power > p2.power) {
+                    p1.power -= p2.power;
+                    p2.active = false;
+                    spawnSpark(midX, midY, p1.hue, p1.saturation, p1.lightness, 5); // 红色火花
+                    
+                    // v13 GAI: 检查 p2 (ai) 战术死亡
+                    if (p2.isSpecial) {
+                        if (p2.tacticType === 'Berserker') {
+                            triggerExplosion(p2.x, p2.y, p2.isPlayer, p2.power * 0.5); // 用原始力量的一半爆炸
+                        } else if (p2.tacticType === 'Commander') {
+                            spawnVeterans(p2.x, p2.y, p2.isPlayer, 3);
+                        }
+                    }
+                    
+                    // v11 GAI: 碰撞后力量降低，视觉效果也应降低
+                    if (!p1.isSpecial && !p1.isVeteran) {
+                         const powerNormal = Math.min(p1.power / 15.0, 1.0);
+                         p1.radius = 3 + 5 * powerNormal;
+                         p1.lightness = 50 + 30 * powerNormal;
+                    } else if (p1.isSpecial) {
+                         const powerNormal = Math.min(p1.power / (75.0 * playerStats.tacticPowerMod), 1.0);
+                         p1.radius = 9 + 7 * powerNormal;
+                         p1.lightness = 60 + 30 * powerNormal;
+                    }
+                    
+                } else if (p2.power > p1.power) {
+                    p2.power -= p1.power;
+                    p1.active = false;
+                    spawnSpark(midX, midY, p2.hue, p2.saturation, p2.lightness, 5); // 蓝色火花
+                    
+                    // v13 GAI: 检查 p1 (player) 战术死亡
+                    if (p1.isSpecial) {
+                        if (p1.tacticType === 'Berserker') {
+                            triggerExplosion(p1.x, p1.y, p1.isPlayer, p1.power * 0.5);
+                        } else if (p1.tacticType === 'Commander') {
+                            spawnVeterans(p1.x, p1.y, p1.isPlayer, 3);
+                        }
+                    }
+
+                    // v11 GAI: 碰撞后力量降低，视觉效果也应降低
+                    if (!p2.isSpecial && !p2.isVeteran) {
+                         const powerNormal = Math.min(p2.power / 15.0, 1.0);
+                         p2.radius = 3 + 5 * powerNormal;
+                         p2.lightness = 50 + 30 * powerNormal;
+                    } else if (p2.isSpecial) {
+                         const powerNormal = Math.min(p2.power / (75.0 * aiStats.tacticPowerMod), 1.0);
+                         p2.radius = 9 + 7 * powerNormal;
+                         p2.lightness = 60 + 30 * powerNormal;
+                    }
+                } else {
+                    // Tie
+                    p1.active = false;
+                    p2.active = false;
+                    spawnSpark(midX, midY, 0, 0, 100, 8); // 白色火花
+                    
+                    // v13 GAI: 检查双方战术死亡
+                    if (p1.isSpecial) {
+                        if (p1.tacticType === 'Berserker') triggerExplosion(p1.x, p1.y, p1.isPlayer, p1.power * 0.5);
+                        else if (p1.tacticType === 'Commander') spawnVeterans(p1.x, p1.y, p1.isPlayer, 3);
+                    }
+                    if (p2.isSpecial) {
+                        if (p2.tacticType === 'Berserker') triggerExplosion(p2.x, p2.y, p2.isPlayer, p2.power * 0.5);
+                        else if (p2.tacticType === 'Commander') spawnVeterans(p2.x, p2.y, p2.isPlayer, 3);
+                    }
+                }
+            }
+
+            // 游戏主循环
+            function gameLoop(now) {
+                if (!gameRunning) {
+                    // v15 GAI: 即使游戏暂停也要监听按键，以便恢复
+                    gameLoopId = requestAnimationFrame(gameLoop);
+                    return;
+                }
+
+                const delta = (now - lastTime) / 1000;
+                lastTime = now;
+
+                // V8 GAI: 更新屏幕震动和受击提示
+                if (screenShake.duration > 0) {
+                    screenShake.duration -= delta;
+                } else {
+                    screenShake.intensity = 0;
+                }
+                if (playerHitAlpha > 0) {
+                    playerHitAlpha -= delta * 2.0; 
+                    if (playerHitAlpha < 0) playerHitAlpha = 0;
+                }
+                
+                // V13 GAI: 更新技能计时器
+                if (playerStats.skillActiveTimer > 0) playerStats.skillActiveTimer -= delta;
+                if (aiStats.skillActiveTimer > 0) aiStats.skillActiveTimer -= delta;
+                
+                // V13 GAI: 更新护盾计时器
+                if (playerStats.shieldTimer > 0) {
+                    playerStats.shieldTimer -= delta;
+                    if (playerStats.shieldTimer <= 0) playerStats.shield = 0;
+                }
+                if (aiStats.shieldTimer > 0) {
+                    aiStats.shieldTimer -= delta;
+                    if (aiStats.shieldTimer <= 0) aiStats.shield = 0;
+                }
+
+
+                // --- 逻辑更新 ---
+                const totalPlayerLevel = playerStats.levelSpeed + playerStats.levelPower + playerStats.levelSpecial;
+                playerStats.energy += ENERGY_RATE * (0.9 + totalPlayerLevel * ENERGY_LEVEL_BONUS) * delta; // v16 GAI
+                
+                updateAI(delta);
+                spawnParticles(delta);
+
+                for (let i = activeParticles.length - 1; i >= 0; i--) {
+                    const p = activeParticles[i];
+                    if (p.active) p.update(delta); // v12 GAI: 传入delta
+                    if (!p.active) activeParticles.splice(i, 1);
+                }
+
+                updateCollisions();
+
+                // --- 绘制 ---
+                ctx.save(); 
+                if (screenShake.intensity > 0) {
+                    const dx = (Math.random() - 0.5) * 2 * screenShake.intensity;
+                    const dy = (Math.random() - 0.5) * 2 * screenShake.intensity;
+                    ctx.translate(dx, dy);
+                }
+                ctx.fillStyle = 'rgba(10, 10, 26, 0.3)';
+                ctx.fillRect(0, 0, W, H);
+                
+                // V10 GAI: 绘制基地受击特效 (垂直渐变)
+                for (let i = activeHitEffects.length - 1; i >= 0; i--) {
+                    const effect = activeHitEffects[i];
+                    const width = 24 + 20 * effect.intensity;
+                    const x_pos = effect.x - width / 2;
+                    const height = (30 + 70 * effect.intensity) * effect.life; 
+                    const y = effect.isPlayer ? playerBaseEdge : aiBaseEdge;
+                    const y_pos = effect.isPlayer ? y - height : y;
+                    
+                    let gradient;
+                    if (effect.isPlayer) {
+                        gradient = ctx.createLinearGradient(0, y_pos, 0, y);
+                        gradient.addColorStop(0, `rgba(255, 255, 255, 0)`);
+                        gradient.addColorStop(1, `rgba(255, 255, 255, ${effect.life * 0.8})`);
+                    } else {
+                        gradient = ctx.createLinearGradient(0, y_pos, 0, y_pos + height);
+                        gradient.addColorStop(0, `rgba(255, 255, 255, ${effect.life * 0.8})`);
+                        gradient.addColorStop(1, `rgba(255, 255, 255, 0)`);
+                    }
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(x_pos, y_pos, width, height);
+                    effect.life -= delta * 3.0; 
+                    if (effect.life <= 0) activeHitEffects.splice(i, 1);
+                }
+
+                // 绘制所有粒子 (火花、拖尾、本体)
+                for (const p of activeParticles) {
+                    p.draw();
+                }
+                
+                // V14 GAI: 绘制护盾
+                if (playerStats.shieldTimer > 0) {
+                    const shieldAlpha = Math.min(1.0, playerStats.shield / 50.0);
+                    ctx.strokeStyle = `rgba(150, 200, 255, ${shieldAlpha * 0.5})`;
+                    ctx.fillStyle = `rgba(150, 200, 255, ${shieldAlpha * 0.2})`;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(0, playerBaseEdge);
+                    // y = P - 60 * t * (1-t) * A
+                    for (let x = 0; x <= W; x += 20) {
+                        const t = x / W;
+                        const shieldY = playerBaseEdge - 60 * t * (1 - t) * shieldAlpha;
+                        ctx.lineTo(x, shieldY);
+                    }
+                    ctx.lineTo(W, playerBaseEdge);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+                if (aiStats.shieldTimer > 0) {
+                    const shieldAlpha = Math.min(1.0, aiStats.shield / 50.0);
+                    ctx.strokeStyle = `rgba(150, 200, 255, ${shieldAlpha * 0.5})`;
+                    ctx.fillStyle = `rgba(150, 200, 255, ${shieldAlpha * 0.2})`;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(0, aiBaseEdge);
+                    for (let x = 0; x <= W; x += 20) {
+                        const t = x / W;
+                        const shieldY = aiBaseEdge + 60 * t * (1 - t) * shieldAlpha;
+                        ctx.lineTo(x, shieldY);
+                    }
+                    ctx.lineTo(W, aiBaseEdge);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+
+                ctx.restore(); // 恢复画布状态 (清除震动)
+                
+                // V8 GAI: 绘制玩家受击提示 (红色光晕)
+                if (playerHitAlpha > 0) {
+                    ctx.fillStyle = `rgba(255, 0, 0, ${playerHitAlpha * 0.2})`;
+                    ctx.fillRect(0, 0, W, H);
+                }
+                
+                // --- UI 更新 ---
+                updateUI();
+                gameLoopId = requestAnimationFrame(gameLoop);
+            }
+            
+            // --- v16 GAI: Tooltip 提示框逻辑 (更新) ---
+            const tooltipData = {
+                'quantity': {
+                    desc: "提升你所有单位的产生速度。",
+                    bonus: "虫群职业: 额外 +30% 效果。",
+                    cost: "狂战士职业: -30% 效果。",
+                    expertise: {
+                        'Flood': "「洪流」: 升级成本 -20%",
+                        'Vanguard': "「先锋」: 基础单位移速 +20%"
+                    }
+                },
+                'damage': {
+                    desc: "提升你所有单位的伤害、体积和亮度。",
+                    bonus: "狂战士职业: 额外 +30% 效果。",
+                    cost: "虫群职业: -30% 效果。",
+                    expertise: {
+                        'Focus': "「毁灭专注」: 伤害效果 +20%, 数量成本 +10%",
+                        'Nurture': "「巨兽培育」: 此升级也会提升战术单位几率"
+                    }
+                },
+                'tactic': {
+                    desc: {
+                        'Commander': "提升你 [守护巨兽] 的出现几率。\n特性: 死亡时分裂成 3 个老兵单位。",
+                        'Berserker': "提升你 [自爆巨兽] 的出现几率。\n特性: 死亡时对周围敌人造成范围伤害。",
+                        'Swarm': "提升你 [孵化领主] 的出现几率。\n特性: 在前进时会免费孵化出幼虫。"
+                    },
+                    expertise: {
+                        'Legend': "「传奇进化」: 战术单位基础属性 +25%",
+                        'Synergy': "「战术协同」: 此升级也会降低技能消耗"
+                    }
+                },
+                'skill': {
+                    'Commander': `为基地提供 200 点护盾，持续 10 秒。\n每使用一次，消耗永久增加 ${AETHER_COST_INCREASE}。`,
+                    'Berserker': `在 5 秒内，所有新单位获得双倍伤害。\n每使用一次，消耗永久增加 ${AETHER_COST_INCREASE}。`,
+                    'Swarm': `立即从基地召唤 20 个基础单位。\n每使用一次，消耗永久增加 ${AETHER_COST_INCREASE}。`
+                }
+            };
+            
+            function showTooltip(e) {
+                const target = e.currentTarget;
+                const id = target.dataset.tooltipId; // 'quantity', 'damage', 'tactic', 'skill'
+                const title = target.dataset.tooltipTitle;
+                
+                let data = tooltipData[id];
+                tooltipTitle.textContent = title;
+                
+                tooltipBonus.style.display = 'none';
+                tooltipCost.style.display = 'none';
+                tooltipExpertise.style.display = 'none';
+
+                if (id === 'tactic') {
+                    tooltipDesc.innerText = data.desc[playerStats.class] || data.desc['Commander'];
+                    const expertise = playerStats.expertiseTactic;
+                    if (expertise) {
+                        tooltipExpertise.innerText = data.expertise[expertise];
+                        tooltipExpertise.style.display = 'block';
+                    }
+                } else if (id === 'skill') {
+                     tooltipData.skill.Commander = `为基地提供 200 点护盾，持续 10 秒。\n每使用一次，消耗永久增加 ${AETHER_COST_INCREASE}。`;
+                     tooltipData.skill.Berserker = `在 5 秒内，所有新单位获得双倍伤害。\n每使用一次，消耗永久增加 ${AETHER_COST_INCREASE}。`;
+                     tooltipData.skill.Swarm = `立即从基地召唤 20 个基础单位。\n每使用一次，消耗永久增加 ${AETHER_COST_INCREASE}。`;
+                     tooltipDesc.innerText = data[playerStats.class] || data['Commander'];
+                } else {
+                    tooltipDesc.innerText = data.desc;
+                    tooltipBonus.textContent = data.bonus;
+                    tooltipCost.textContent = data.cost;
+                    tooltipBonus.style.display = 'block';
+                    tooltipCost.style.display = 'block';
+                    
+                    const expertise = playerStats[id === 'quantity' ? 'expertiseQuantity' : 'expertiseDamage'];
+                    if (expertise) {
+                        tooltipExpertise.innerText = data.expertise[expertise];
+                        tooltipExpertise.style.display = 'block';
+                    }
+                }
+                
+                const rect = target.getBoundingClientRect();
+                tooltip.style.display = 'block';
+                tooltip.style.left = `${W / 2 - tooltip.offsetWidth / 2}px`; // 居中
+                tooltip.style.bottom = `${H - rect.top + 8}px`; // 在按钮上方 8px
+            }
+            
+            function hideTooltip() {
+                tooltip.style.display = 'none';
+            }
+
+            // --- 事件监听 ---
+            window.addEventListener('resize', resizeCanvas);
+            document.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
+
+            // 职业选择按钮
+            document.getElementById('start-commander').addEventListener('click', () => startGame('Commander'));
+            document.getElementById('start-berserker').addEventListener('click', () => startGame('Berserker'));
+            document.getElementById('start-swarm').addEventListener('click', () => startGame('Swarm'));
+            restartButton.addEventListener('click', init); // 重新开始按钮
+            
+            // v15 GAI: 专精选择按钮
+            expertiseChoice1.addEventListener('click', () => selectExpertise(expertiseChoice1.dataset.choice));
+            expertiseChoice2.addEventListener('click', () => selectExpertise(expertiseChoice2.dataset.choice));
+
+            // 升级按钮
+            document.getElementById('upgrade-quantity').addEventListener('click', () => playerUpgrade('quantity'));
+            document.getElementById('upgrade-damage').addEventListener('click', () => playerUpgrade('damage'));
+            document.getElementById('upgrade-tactic').addEventListener('click', () => playerUpgrade('tactic'));
+            
+            // v12 GAI: 技能按钮
+            skillButton.addEventListener('click', playerActivateSkill);
+
+            // v12 GAI: Tooltip 提示框事件
+            document.querySelectorAll('.tooltip-trigger').forEach(el => {
+                el.addEventListener('mousedown', showTooltip);
+                el.addEventListener('mouseup', hideTooltip);
+                el.addEventListener('mouseleave', hideTooltip);
+                el.addEventListener('touchstart', (e) => { e.preventDefault(); showTooltip(e); }, { passive: false });
+                el.addEventListener('touchend', (e) => { e.preventDefault(); hideTooltip(); }, { passive: false });
+            });
+
+            // 初始启动
+            init();
+        });
+    </script>
+</body>
+</html>
