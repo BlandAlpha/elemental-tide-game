@@ -1,0 +1,113 @@
+/* 所有的 CSS 规则从 <style> 标签移动到这里 */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+body, html {
+    font-family: 'Inter', sans-serif;
+    overflow: hidden; /* 彻底禁止滚动 */
+    height: 100%;
+    width: 100%;
+    position: fixed; /* 适配移动端浏览器 */
+}
+
+#game-container {
+    padding-bottom: env(safe-area-inset-bottom, 2rem); 
+}
+
+canvas {
+    display: block;
+    background-color: #0a0a1a; /* 深色战场背景 */
+    width: 100%;
+    height: 100%;
+}
+
+.btn-upgrade, .btn-class, .btn-skill, .btn-expertise { 
+    transition: all 0.1s ease;
+    -webkit-tap-highlight-color: transparent; /* 移除移动端点击高光 */
+}
+
+.btn-upgrade:active, .btn-class:active, .btn-skill:active, .btn-expertise:active {
+    transform: scale(0.95);
+    filter: brightness(0.9);
+}
+
+.btn-upgrade:disabled, .btn-skill:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(50%);
+}
+
+/* 基地渐变 */
+#ai-ui-bar { position: relative; }
+#ai-ui-bar::after {
+    content: ''; position: absolute; top: 100%; left: 0; width: 100%; height: 10px;
+    background: linear-gradient(to bottom, rgba(50, 150, 255, 0.5), transparent);
+    pointer-events: none;
+}
+#player-ui-bar { 
+    position: relative; 
+}
+#player-ui-bar::before {
+    content: ''; position: absolute; bottom: 100%; left: 0; width: 100%; height: 10px;
+    background: linear-gradient(to top, rgba(255, 50, 50, 0.5), transparent);
+    pointer-events: none;
+}
+
+/* 提示框 (?) 按钮 */
+.tooltip-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem; /* 20px */
+    height: 1.25rem; /* 20px */
+    border-radius: 99px;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-weight: bold;
+    font-size: 0.8rem;
+    cursor: help;
+    margin-left: 2px;
+    -webkit-user-select: none; /* Safari */
+    user-select: none;
+}
+
+/* 提示框本体 */
+#tooltip {
+    position: absolute;
+    display: none;
+    background-color: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 0.75rem; /* 12px */
+    border-radius: 0.5rem; /* 8px */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    max-width: 90%;
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+}
+#tooltip h4 {
+    font-weight: bold;
+    color: #facc15; /* yellow-400 */
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+#tooltip p {
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+#tooltip em {
+    color: #6ee7b7; /* emerald-300 */
+    font-style: italic;
+}
+#tooltip .cost {
+    color: #f87171; /* red-400 */
+    font-style: italic;
+}
+#tooltip-expertise {
+    font-size: 0.9rem;
+    color: #fde047; /* yellow-300 */
+    border-top: 1px solid #6b7280;
+    padding-top: 6px;
+    margin-top: 6px;
+    font-style: italic;
+}
